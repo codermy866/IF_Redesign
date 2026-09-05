@@ -1,0 +1,68 @@
+{
+  "experiment_id": "cesl_example_loco",
+  "endpoint": "binary_endpoint",
+  "claim_boundary": "Offline retrospective evidence-retention analysis only; no clinical acquisition or safety claim is implied.",
+  "manifest": "data/deidentified_manifest.csv",
+  "atom_manifest": "data/deidentified_atom_manifest.jsonl",
+  "fold_assignments": "data/fold_assignments.csv",
+  "output_dir": "results/cesl",
+  "folds": ["site_a", "site_b", "site_c", "site_d", "site_e"],
+  "seeds": [17, 29, 43],
+  "image_encoder": {
+    "name": "torchvision_resnet50_imagenet1k_v2",
+    "frozen": true,
+    "feature_dim": 2048,
+    "input_size": 224,
+    "batch_size": 64,
+    "feature_file": "features/raw_atom_resnet50.pt"
+  },
+  "model": {
+    "token_dim": 128,
+    "transformer_layers": 2,
+    "attention_heads": 4,
+    "dropout": 0.1,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "batch_size": 48,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "visual_keep_probability": 0.75,
+    "css_group_dro_weight": 0.25,
+    "css_rank_stability_weight": 0.1
+  },
+  "counterfactual_distribution": {
+    "draws": 3,
+    "variants": ["main_matched", "center_only", "pooled_unmatched"]
+  },
+  "stopping_rule": {
+    "minimum_visual_atoms": 1,
+    "maximum_visual_atoms": 6,
+    "margin_gamma": 0.2,
+    "residual_cev_epsilon": 0.02,
+    "uncertainty_margin_gamma": 0.2,
+    "fixed_order": [
+      "colposcopy_00", "colposcopy_01", "colposcopy_02", "colposcopy_03",
+      "oct_00", "oct_01", "oct_02", "oct_03", "oct_04", "oct_05"
+    ]
+  },
+  "robustness_scenarios": [
+    "missing_clinical",
+    "missing_colposcopy",
+    "missing_oct",
+    "reduced_colposcopy_atoms",
+    "reduced_oct_atoms"
+  ],
+  "bootstrap": {
+    "replicates": 5000,
+    "unit": "patient sampled within centre and outcome strata",
+    "multiplicity": "Holm adjustment within the prespecified comparison family"
+  },
+  "primary_estimand": "macro-centre AUPRC of the three-seed ensemble on held-out cases",
+  "unavailable_evidence_gates": {
+    "temporal_validation": "Requires a validated acquisition-date field.",
+    "independent_external_hospital": "Requires an independent external cohort.",
+    "prospective_silent_study": "Requires a prospective study protocol and applicable governance review.",
+    "multi_reader_human_ai_study": "Requires a reader-study dataset and protocol.",
+    "reviewed_roi_or_polygon": "Requires clinician-reviewed ROI, polygon, or bounding-box annotations."
+  }
+}
