@@ -6,17 +6,17 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+FOLDS = ("shiyan", "enshi", "wuhan", "jingzhou", "xiangyang")
 BACKBONES = ("c0_full", "selection", "css")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     parser.add_argument("--gpus", nargs="+", default=["0", "1"])
     return parser.parse_args()
 
@@ -57,8 +57,7 @@ def write_status(path: Path, config: dict, planned: list[tuple[str, int]], activ
 def main() -> None:
     args = parse_args()
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    folds = tuple(str(fold) for fold in config["folds"])
-    planned = [(fold, int(seed)) for fold in folds for seed in config["seeds"]]
+    planned = [(fold, int(seed)) for fold in FOLDS for seed in config["seeds"]]
     incomplete = [job for job in planned if not training_complete(config, *job)]
     if incomplete:
         raise RuntimeError(f"CESL evaluation requires all backbones complete; first incomplete fold/seed={incomplete[0]}")
@@ -78,7 +77,7 @@ def main() -> None:
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = str(gpu)
             command = [
-                sys.executable,
+                str(ROOT / ".venv/bin/python"),
                 str(ROOT / "scripts/evaluate_cesl_fold.py"),
                 fold,
                 str(seed),

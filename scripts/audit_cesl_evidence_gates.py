@@ -16,7 +16,7 @@ from cervix_cogalign.io import read_json, read_jsonl  # noqa: E402
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     args = parser.parse_args()
     config = read_json(args.config)
     manifest = pd.read_csv(config["manifest"], nrows=5)

@@ -6,7 +6,6 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -17,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     parser.add_argument("--gpus", nargs="+", default=["0", "1"])
     return parser.parse_args()
 
@@ -74,7 +73,7 @@ def main() -> None:
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = str(gpu)
             command = [
-                sys.executable,
+                str(ROOT / ".venv/bin/python"),
                 str(ROOT / "scripts/extract_cesl_atom_features.py"),
                 "--config",
                 str(args.config),
@@ -107,7 +106,7 @@ def main() -> None:
     if failures:
         raise SystemExit(f"CESL feature extraction finished with {len(failures)} failed shards")
     merge_command = [
-        sys.executable,
+        str(ROOT / ".venv/bin/python"),
         str(ROOT / "scripts/extract_cesl_atom_features.py"),
         "--config",
         str(args.config),

@@ -14,19 +14,21 @@ sys.path.insert(0, str(ROOT / "src"))
 from cervix_cogalign.io import read_json  # noqa: E402
 from cervix_cogalign.statistics import macro_centre_metrics, paired_bootstrap_delta, point_metrics  # noqa: E402
 
+FOLDS = ("shiyan", "enshi", "wuhan", "jingzhou", "xiangyang")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     args = parser.parse_args()
     config = read_json(args.config)
-    folds = tuple(str(fold) for fold in config["folds"])
     output = Path(config["output_dir"])
     analysis = output / "analysis"
     threshold_path = analysis / "ensemble_thresholds.csv"
     if not threshold_path.is_file():
         raise FileNotFoundError("Aggregate primary CESL predictions before availability stress")
     paths = []
-    for fold in folds:
+    for fold in FOLDS:
         for seed in config["seeds"]:
             root = output / "evaluations" / fold / f"seed_{seed}"
             if not (root / "availability_stress_complete.json").is_file():

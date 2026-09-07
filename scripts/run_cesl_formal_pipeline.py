@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     parser.add_argument("--gpus", nargs="+", default=["0", "1"])
     return parser.parse_args()
 
@@ -53,13 +53,13 @@ def main() -> None:
         try:
             write_status(status_path, status="running", step="linear_controls_and_training", completed=completed)
             linear = subprocess.Popen(
-                [sys.executable, str(ROOT / "scripts/run_cesl_linear_queue.py"), "--config", str(args.config)],
+                [str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_linear_queue.py"), "--config", str(args.config)],
                 cwd=ROOT,
                 stdout=log,
                 stderr=subprocess.STDOUT,
             )
             run(
-                [sys.executable, str(ROOT / "scripts/run_cesl_training_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
+                [str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_training_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
                 log=log,
             )
             if linear.wait() != 0:
@@ -67,21 +67,21 @@ def main() -> None:
             completed.extend(["linear_controls", "backbone_training"])
             write_status(status_path, status="running", step="frozen_held_out_evaluation", completed=completed)
             run(
-                [sys.executable, str(ROOT / "scripts/run_cesl_evaluation_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
+                [str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_evaluation_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
                 log=log,
             )
             completed.append("frozen_held_out_evaluation")
             write_status(status_path, status="running", step="availability_stress", completed=completed)
             run(
-                [sys.executable, str(ROOT / "scripts/run_cesl_stress_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
+                [str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_stress_queue.py"), "--config", str(args.config), "--gpus", *args.gpus],
                 log=log,
             )
             completed.append("availability_stress")
             write_status(status_path, status="running", step="aggregation_and_statistics", completed=completed)
-            run([sys.executable, str(ROOT / "scripts/aggregate_cesl_results.py"), "--config", str(args.config)], log=log)
-            run([sys.executable, str(ROOT / "scripts/run_cesl_statistics.py"), "--config", str(args.config)], log=log)
-            run([sys.executable, str(ROOT / "scripts/aggregate_cesl_availability_stress.py"), "--config", str(args.config)], log=log)
-            run([sys.executable, str(ROOT / "scripts/audit_cesl_evidence_gates.py"), "--config", str(args.config)], log=log)
+            run([str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/aggregate_cesl_results.py"), "--config", str(args.config)], log=log)
+            run([str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_statistics.py"), "--config", str(args.config)], log=log)
+            run([str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/aggregate_cesl_availability_stress.py"), "--config", str(args.config)], log=log)
+            run([str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/audit_cesl_evidence_gates.py"), "--config", str(args.config)], log=log)
             completed.extend(["aggregation", "statistics", "evidence_gate_audit"])
             write_status(status_path, status="complete", step="complete", completed=completed)
         except Exception as error:

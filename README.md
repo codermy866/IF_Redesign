@@ -1,6 +1,10 @@
-# CESL core code
+# IF Redesign core code
 
-This repository contains the reusable research code for Counterfactual Evidence Sufficiency Learning (CESL): feature extraction, source-only counterfactual donor construction, backbone training, frozen held-out inference, availability stress tests, and bootstrap-based analysis.
+This repository contains reusable core code for evidence-centric multimodal
+diagnosis research: Counterfactual Evidence Sufficiency Learning (CESL),
+case-intrinsic evidence sets (ICES), cross-fitted diagnostic gain learning,
+missing-modality fusion screens, counterfactual visual re-inspection utilities,
+and bootstrap-based analysis.
 
 No data, image files, patient identifiers, trained weights, logs, result tables, figures, or manuscript material are included.
 
@@ -32,11 +36,23 @@ Keep all input data outside version control. The provided `.gitignore` excludes 
 
 ## Run order
 
-First extract frozen raw-atom features, then run the resumable pipeline:
+For the CESL atom-level pipeline, first extract frozen raw-atom features, then run
+the resumable pipeline:
 
 ```bash
 python scripts/run_cesl_feature_queue.py --config configs/cesl_v2_example.json --gpus 0 1
 python scripts/run_cesl_formal_pipeline.py --config configs/cesl_v2_example.json --gpus 0 1
+```
+
+For the ICES/cross-fitted gain/missing-modality pipeline, adapt
+`configs/ices_v1_exploratory.json` to your de-identified manifest, fold table,
+and feature-cache locations, then run the relevant queue script:
+
+```bash
+python scripts/run_ices_feature_queue.py --config configs/ices_v1_exploratory.json --gpus 0 1
+python scripts/run_ices_training_queue.py --config configs/ices_v1_exploratory.json --gpus 0 1
+python scripts/launch_cross_fitted_gain.py
+python scripts/launch_missing_modality_fusion.py
 ```
 
 The feature extractor uses the torchvision ImageNet ResNet-50 weights and may download them on first use. For CPU-only validation, pass `--device cpu` directly to `scripts/extract_cesl_atom_features.py`.
@@ -44,7 +60,15 @@ The feature extractor uses the torchvision ImageNet ResNet-50 weights and may do
 ## Method components
 
 - `src/cervix_cogalign/cesl.py`: evidence atoms, outcome-blind source-only donor pools, conditional counterfactual evidence values, adaptive sufficiency stopping, and centre/stability regularisation.
+- `src/cervix_cogalign/ices.py`: set-transformer evidence modeling, fixed/adaptive evidence retention masks, modality dropout, and visual-cost accounting.
+- `src/cervix_cogalign/sequence_evidence.py`: OCT position-cluster parsing and within-case deletion-counterfactual sufficiency/minimality losses.
+- `src/cervix_cogalign/verifiable_evidence.py`: representation grounding, necessity, information, conflict, and verifier-style evidence scoring utilities.
+- `src/cervix_cogalign/counterfactual.py`: deterministic proxy ROI and finite image-perturbation helpers for engineering audits.
 - `scripts/train_cesl_backbone.py`: full-evidence, selection-only, and CSS backbone training.
+- `scripts/train_ices_backbone.py`: source-only ICES backbone training and predeclared module ablations.
+- `scripts/run_cross_fitted_gain.py`: nested diagnostic teachers, matched out-of-fold gain labels, and frozen policy evaluation.
+- `scripts/run_missing_modality_fusion.py`: unimodal, late-fusion, frozen-fusion, trainable-fusion, and modality-dropout stress tests.
+- `scripts/run_csf_screen.py` and `scripts/run_csf_memory.py`: counterfactual sufficiency frontier screens and expected gain memory baselines.
 - `scripts/evaluate_cesl_fold.py`: fixed-policy held-out inference and post-freeze mechanism audits.
 - `scripts/run_cesl_availability_stress.py`: missing-modality and reduced-evidence stress tests.
 - `scripts/run_cesl_statistics.py`: paired, patient-clustered bootstrap inference and multiplicity adjustment.

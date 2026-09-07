@@ -6,16 +6,16 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+FOLDS = ("shiyan", "enshi", "wuhan", "jingzhou", "xiangyang")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     parser.add_argument("--gpus", nargs="+", default=["0", "1"])
     return parser.parse_args()
 
@@ -29,8 +29,7 @@ def complete(config: dict, job: tuple[str, int]) -> bool:
 def main() -> None:
     args = parse_args()
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    folds = tuple(str(fold) for fold in config["folds"])
-    planned = [(fold, int(seed)) for fold in folds for seed in config["seeds"]]
+    planned = [(fold, int(seed)) for fold in FOLDS for seed in config["seeds"]]
     not_evaluated = [job for job in planned if not (Path(config["output_dir"]) / "evaluations" / job[0] / f"seed_{job[1]}" / "evaluation_complete.json").is_file()]
     if not_evaluated:
         raise RuntimeError(f"Stress evaluation needs frozen policy predictions; first incomplete={not_evaluated[0]}")
@@ -48,7 +47,7 @@ def main() -> None:
             log = (root / "availability_stress_console.log").open("a", encoding="utf-8")
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = str(gpu)
-            command = [sys.executable, str(ROOT / "scripts/run_cesl_availability_stress.py"), fold, str(seed), "--config", str(args.config), "--device", "cuda"]
+            command = [str(ROOT / ".venv/bin/python"), str(ROOT / "scripts/run_cesl_availability_stress.py"), fold, str(seed), "--config", str(args.config), "--device", "cuda"]
             process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT)
             active[gpu] = (process, (fold, seed), log, time.time())
             print(f"START gpu={gpu} stress={fold}/{seed}", flush=True)

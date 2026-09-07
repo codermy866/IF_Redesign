@@ -15,6 +15,7 @@ from cervix_cogalign.io import read_json, read_jsonl  # noqa: E402
 from cervix_cogalign.metrics import select_balanced_accuracy_threshold  # noqa: E402
 
 
+FOLDS = ("shiyan", "enshi", "wuhan", "jingzhou", "xiangyang")
 LINEAR_METHODS = (
     "clinical_only_lr",
     "raw_colposcopy_meanpool_linear",
@@ -25,7 +26,7 @@ LINEAR_METHODS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_example.json"))
+    parser.add_argument("--config", default=str(ROOT / "configs/cesl_v2_formal_retrospective.json"))
     return parser.parse_args()
 
 
@@ -33,9 +34,9 @@ def read_csv(path: Path) -> pd.DataFrame:
     return pd.read_csv(path, dtype={"id": str, "patient_id": str, "seed": str, "fold": str, "policy": str})
 
 
-def neural_paths(output: Path, folds: tuple[str, ...], seeds: list[int]) -> list[Path]:
+def neural_paths(output: Path, seeds: list[int]) -> list[Path]:
     paths = []
-    for fold in folds:
+    for fold in FOLDS:
         for seed in seeds:
             root = output / "evaluations" / fold / f"seed_{seed}"
             marker = root / "evaluation_complete.json"
@@ -84,11 +85,10 @@ def apply_thresholds(frame: pd.DataFrame, thresholds: pd.DataFrame, method_famil
 def main() -> None:
     args = parse_args()
     config = read_json(args.config)
-    folds = tuple(str(fold) for fold in config["folds"])
     output = Path(config["output_dir"])
     analysis = output / "analysis"
     analysis.mkdir(parents=True, exist_ok=True)
-    paths = neural_paths(output, folds, [int(seed) for seed in config["seeds"]])
+    paths = neural_paths(output, [int(seed) for seed in config["seeds"]])
     neural_test = pd.concat([read_csv(path) for path in paths if path.name == "test_predictions.csv"], ignore_index=True)
     neural_val = pd.concat([read_csv(path) for path in paths if path.name == "validation_predictions.csv"], ignore_index=True)
     val_ensemble, thresholds = ensemble_predictions(neural_val, split="val")
@@ -110,7 +110,7 @@ def main() -> None:
 
     linear_test = []
     linear_val = []
-    for fold in folds:
+    for fold in FOLDS:
         root = output / "linear_controls" / fold
         if not (root / "complete.json").is_file():
             raise FileNotFoundError(f"Missing raw-atom linear controls for fold={fold}")
@@ -149,13 +149,13 @@ def main() -> None:
         "q_sensitivity.csv": "q_sensitivity.csv",
     }
     for target_name, source_name in ancillary.items():
-        files = [output / "evaluations" / fold / f"seed_{seed}" / source_name for fold in folds for seed in config["seeds"]]
+        files = [output / "evaluations" / fold / f"seed_{seed}" / source_name for fold in FOLDS for seed in config["seeds"]]
         if not all(path.is_file() for path in files):
             raise FileNotFoundError(f"Missing ancillary CESL artifact for {target_name}")
         pd.concat([pd.read_csv(path) for path in files], ignore_index=True).to_csv(analysis / target_name, index=False)
     donor_index = [
         {"fold": fold, "seed": int(seed), "path": str((output / "evaluations" / fold / f"seed_{seed}" / "donor_edges.csv.gz").resolve())}
-        for fold in folds
+        for fold in FOLDS
         for seed in config["seeds"]
     ]
     (analysis / "donor_audit_index.json").write_text(json.dumps(donor_index, ensure_ascii=False, indent=2), encoding="utf-8")

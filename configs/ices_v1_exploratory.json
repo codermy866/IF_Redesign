@@ -1,0 +1,72 @@
+{
+  "experiment_id": "case_intrinsic_counterfactual_evidence_sets_v1",
+  "status": "deidentified_example_configuration",
+  "endpoint": "binary_endpoint",
+  "scope": "retrospective source-only multimodal evidence-set modeling with leave-one-centre-out assignments",
+  "claim_boundary": "Deletion counterfactuals quantify model dependence on observed within-case evidence units. They do not identify lesions, establish causal pathology mechanisms, or validate clinical deployment.",
+  "manifest": "data/deidentified_manifest.csv",
+  "fold_assignments": "data/fold_assignments.csv",
+  "output_dir": "results/ices_v1",
+  "seeds": [20260905, 20260906, 20260907],
+  "sequence_units": {
+    "oct_unit": "all raw frames sharing one parsed machine position field",
+    "expected_oct_positions": 12,
+    "expected_frames_per_oct_position": 10,
+    "colposcopy_unit": "one acquired colposcopy view",
+    "position_semantics": "scanner-position identifier only unless independently documented"
+  },
+  "image_encoder": {
+    "name": "torchvision_resnet50_imagenet1k_v2",
+    "frozen": true,
+    "feature_dim": 2048,
+    "input_size": 224,
+    "batch_size": 64,
+    "feature_file": "features/ices_position_cluster_resnet50.pt"
+  },
+  "feature_key_by_backbone": {
+    "raw_m1_ablation": "raw_features",
+    "cluster_m1_m2": "cluster_features",
+    "cluster_m1_m2_m3": "cluster_features",
+    "cluster_selected_control": "cluster_features",
+    "cluster_sufficiency_control": "cluster_features",
+    "cluster_pure_m3": "cluster_features"
+  },
+  "model": {
+    "token_dim": 128,
+    "transformer_layers": 2,
+    "attention_heads": 4,
+    "dropout": 0.1,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "batch_size": 48,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "visual_keep_probability": 0.75,
+    "subset_classification_weight": 0.5,
+    "sufficiency_weight": 0.25,
+    "minimality_weight": 0.25,
+    "selected_full_weight": 1.0,
+    "selected_subset_weight": 0.5,
+    "sufficiency_tolerance": 0.05,
+    "deletion_margin": 0.1
+  },
+  "policy": {
+    "fixed_visual_budget": 3,
+    "adaptive_min_visual_units": 1,
+    "adaptive_max_visual_units": 6,
+    "adaptive_confidence_margin": 0.2,
+    "offline_retention_only": true
+  },
+  "method_modules": {
+    "M1": "position-consistent OCT cluster tokenization",
+    "M2": "set-conditioned adaptive sufficiency policy",
+    "M3": "within-case deletion-counterfactual minimality objective and audit"
+  },
+  "source_only_ablation_families": {
+    "A1_raw_fixed": "M1 removed: single-frame tokens with fixed retention",
+    "A2_cluster_fixed": "M1 only: position-cluster tokens with fixed retention",
+    "A3_cluster_adaptive": "M1 plus M2",
+    "A4_ices_full": "M1 plus M2 plus M3",
+    "controls": ["full_evidence", "attention_fixed_cost", "random_fixed_cost"]
+  }
+}
