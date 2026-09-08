@@ -63,13 +63,13 @@ def main():
             'test_labels_evaluated':False,'verified_target_provenance_rows':audit_count,'training_action_rows':gain_rows,
             'statistics':'seed-averaged metric differences, not probability ensemble;1000 stratified paired patient bootstrap draws within each fold;descriptive unadjusted intervals;overlapping folds not independent'}
     (OUT/'replication_summary.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
-    lines=['# Cross-fitted gain: three-seed replication','',
-           f'Fifteen fold-seed runs and 90 freshly trained diagnostic models; {len(all_indices)} unique validation patients. Held-out hospitals are not evaluated here.','',
-           '| Method | Mean macro-AP@4 across 15 runs | Site recall@4 |','|---|---:|---:|']
+    lines=['# Cross-fitted gain：三种子完整重复实验','',
+           f'15/15划分-种子运行、90个重新训练的诊断模型；独立验证患者{len(all_indices)}名。未评价留出医院。','',
+           '| 方法 | 15次运行平均 macro-AP@4 | 点位召回@4 |','|---|---:|---:|']
     for m,v in values.items():lines.append(f"| {m} | {v['mean_15_run_macro_ap_at4']:.4f} | {v['mean_case_site_recall_at4']:.4f} |")
-    lines += ['',f'The highest fixed-budget-4 development mean is {best}. The table includes all baselines; this selection is not independent superiority evidence.','',
-              'Full budget curves, per-seed metrics, centre class counts, and paired intervals are in replication_summary.json. The statistical unit is the patient; averaging three seeds does not increase the case count and is not probability ensembling.', '',
-              'The method ranks already extracted candidate features offline. Retaining four sites must not be interpreted as acquiring only four sites. OOF gain is not a clinical causal effect. Do not combine best values from historical protocols as if they came from the current model.']
+    lines += ['',f'本次开发集固定预算4的均值最高方法：{best}。结果表包含全部基线；该选择并不等于独立验证优越性。','',
+              '完整预算曲线、每个种子的表现、各中心类别数和配对区间见replication_summary.json。统计单位是患者，三种子平均指标不是病例数扩充，也不是概率集成。', '',
+              '方法只对已提取的所有候选特征进行离线排序；不能把保留4个点位解释为只采集4个点位。OOF收益不是临床因果效应。不得将历史协议的最好值拼成当前模型的结果。']
     (OUT/'REPLICATION_REPORT.md').write_text('\n'.join(lines)+'\n')
     print(json.dumps({'policies':values,'best_development':best},indent=2),flush=True)
 

@@ -53,15 +53,15 @@ def main():
             'target_optimism_audits':target_audits,'best_development_policy_at4':best,'best_policy_is_confirmatory':False,
             'statistics':'1000 within-fold paired patient bootstrap draws stratified center/outcome; descriptive CIs, no multiplicity-adjusted superiority claim; overlapping folds never treated as independent patients'}
     (OUT/'summary.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
-    lines=['# Cross-fitted diagnostic gain: first complete run','',
-           f'Five source folds, 30 freshly trained diagnostic models, one seed; {len(unique)} unique validation patients and {appearances} fold-level validation appearances. Held-out external centres are not evaluated here.','',
-           '| Policy | Mean fold macro-AP@4 | Positive-site recall@4 |','|---|---:|---:|']
+    lines=['# Cross-fitted diagnostic gain：完整首轮结果','',
+           f'五个源中心划分、30个重新训练的诊断模型、一个种子；{len(unique)}名独立验证患者，{appearances}个跨划分出现次数。未评价外部留出中心。','',
+           '| 策略 | 五划分平均病例 macro-AP@4 | 阳性点位 Recall@4 |','|---|---:|---:|']
     for m,v in table.items():lines.append(f"| {m} | {v['mean_fold_macro_ap_at4']:.4f} | {v['mean_case_site_recall_at4_across_folds']:.4f} |")
-    lines.extend(['',f'The highest fixed-budget-4 mean on the development set is {best}. This is a development-set choice, not independent superiority evidence.','',
-      '## Interpretation boundary','',
-      'OOF gain is the observed-label loss difference from a model that did not fit that patient. It is not a clinical causal effect. All candidates have already been imaged, so retained-count curves are offline evidence-retention analyses.', '',
-      'The full 0-6 budget curves, full-evidence reference, source-centre audits, and paired intervals are in summary.json. Comparisons should use the same contemporaneous frozen diagnostic model rather than mixing best historical values.', '',
-      'This report covers one seed only. A publishable superiority claim requires a locked method, repeated seeds, and independent-centre validation. Brightness, noise, and scanner-style perturbations are not validated lesion-preserving interventions here.'])
+    lines.extend(['',f'开发集固定预算4的最高平均值来自 {best}；这是开发集选择结果，不是独立验证的优越性证明。','',
+      '## 解释边界','',
+      'OOF收益是未见过该患者的模型对证据增量的有标签损失差，不是真实临床因果效应。所有候选已经成像，不能把保留数量说成实际检查成本。', '',
+      '完整0–6预算曲线、全证据参照、源中心/HPV组机制审计和全部配对区间见summary.json。比较必须用同期冻结诊断模型，不能拼接历史实验最优值。', '',
+      '本轮仅一个种子。若要形成论文优越性证据，需要锁定方案、重复种子和独立中心验证。亮度/噪声/设备风格尚未验证为病灶保持干预，未加入不变性训练。'])
     (OUT/'REPORT.md').write_text('\n'.join(lines)+'\n')
     print(json.dumps({'policies':table,'best_development':best},indent=2),flush=True)
 

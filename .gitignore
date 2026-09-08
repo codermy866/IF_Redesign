@@ -3,12 +3,22 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 
-# De-identified inputs, derived features, checkpoints, logs, and results.
+# Private inputs, derived artifacts, checkpoints, logs, and experiment outputs.
 data/
+models/
 results/
+auto_research/
 *.pt
 *.pth
 *.ckpt
+*.safetensors
+*.npz
 *.log
 *.csv
 *.jsonl
+*.pdf
+
+# Local runtime state
+campaign.lock
+prepare.lock
+*.tmp

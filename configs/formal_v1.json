@@ -1,0 +1,45 @@
+{
+  "experiment_id": "cervix_cognition_alignment_formal_v1_loco",
+  "seed": 20260902,
+  "seeds": [20260902, 20260903, 20260904],
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "model": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/models/pretrained/Qwen3-VL-2B-Instruct",
+  "feature_cache": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_2026/paper_revision/cache/patch_features_final_1897.pt",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/formal_v1",
+  "endpoint": "CIN2+",
+  "outer_split": "leave-one-centre-out",
+  "inner_validation_fraction": 0.2,
+  "require_colposcopy": true,
+  "require_oct": true,
+  "natural_prevalence_validation_and_test": true,
+  "max_colposcopy_images": 4,
+  "max_oct_images": 6,
+  "panel_tile_size": 224,
+  "inference_max_pixels": 602112,
+  "max_new_tokens": 320,
+  "bootstrap_replicates": 5000,
+  "centres": {
+    "十堰市人民医院": "shiyan",
+    "恩施州中心医院": "enshi",
+    "武大人民医院": "wuhan",
+    "荆州市第一人民医院": "jingzhou",
+    "襄阳市中心医院": "xiangyang"
+  },
+  "primary_comparators": [
+    "clinical_only_lr",
+    "frozen_multimodal_linear",
+    "qwen3vl_zero_shot",
+    "diagnosis_only_sft",
+    "hierarchical_sft"
+  ],
+  "ablation_blocks": {
+    "cognition_structure": ["diagnosis_only", "without_integration", "full_hierarchy"],
+    "modality_contribution": ["colposcopy_only", "oct_only", "full_multimodal"],
+    "supervision_integrity": ["without_clinical", "shuffled_cognition", "full_hierarchy"]
+  },
+  "variant_aliases": {
+    "hierarchical_sft": "full_hierarchy",
+    "full_multimodal": "full_hierarchy"
+  },
+  "grpo_gate": "reviewed_roi_required"
+}

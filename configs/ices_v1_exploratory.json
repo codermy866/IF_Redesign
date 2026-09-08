@@ -1,19 +1,26 @@
 {
   "experiment_id": "case_intrinsic_counterfactual_evidence_sets_v1",
-  "status": "deidentified_example_configuration",
-  "endpoint": "binary_endpoint",
-  "scope": "retrospective source-only multimodal evidence-set modeling with leave-one-centre-out assignments",
-  "claim_boundary": "Deletion counterfactuals quantify model dependence on observed within-case evidence units. They do not identify lesions, establish causal pathology mechanisms, or validate clinical deployment.",
-  "manifest": "data/deidentified_manifest.csv",
-  "fold_assignments": "data/fold_assignments.csv",
-  "output_dir": "results/ices_v1",
+  "status": "source_only_ablation_protocol_locked_before_outcomes",
+  "parent_result": "VEC-v1-to-v3 source-only falsification and root-cause audit",
+  "endpoint": "CIN2+",
+  "scope": "exploratory retrospective leave-one-centre-out study of case-intrinsic scanner-position evidence sets",
+  "claim_boundary": "Deletion counterfactuals quantify model dependence on observed within-case evidence units. They do not identify lesions, establish causal pathology mechanisms, establish acquisition-time savings, or provide clinical deployment validation.",
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "fold_assignments": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/formal_v1/fold_assignments.csv",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1",
+  "outer_split": "reuse the five Formal-v1 leave-one-centre-out assignments; all policy and hyperparameter fitting is source-only",
   "seeds": [20260905, 20260906, 20260907],
   "sequence_units": {
-    "oct_unit": "all raw frames sharing one parsed machine position field",
+    "oct_unit": "all ten raw frames sharing one parsed C/S machine position field",
     "expected_oct_positions": 12,
     "expected_frames_per_oct_position": 10,
-    "colposcopy_unit": "one acquired colposcopy view",
-    "position_semantics": "scanner-position identifier only unless independently documented"
+    "colposcopy_unit": "one acquired colposcopy view; no lesion region is inferred",
+    "position_semantics": "scanner-position identifier only until confirmed by device/acquisition documentation"
+  },
+  "representation_plan": {
+    "oct_primary": "frozen RETFound OCT initialization, treated as an out-of-domain foundation-feature ablation rather than cervical-domain validation",
+    "oct_control": "frozen ImageNet ResNet-50 pooled over the identical ten-frame C/S cluster",
+    "colposcopy": "frozen ImageNet ResNet-50 view feature with a modality-specific fusion projection"
   },
   "image_encoder": {
     "name": "torchvision_resnet50_imagenet1k_v2",
@@ -21,15 +28,8 @@
     "feature_dim": 2048,
     "input_size": 224,
     "batch_size": 64,
-    "feature_file": "features/ices_position_cluster_resnet50.pt"
-  },
-  "feature_key_by_backbone": {
-    "raw_m1_ablation": "raw_features",
-    "cluster_m1_m2": "cluster_features",
-    "cluster_m1_m2_m3": "cluster_features",
-    "cluster_selected_control": "cluster_features",
-    "cluster_sufficiency_control": "cluster_features",
-    "cluster_pure_m3": "cluster_features"
+    "feature_file": "features/ices_position_cluster_resnet50.pt",
+    "raw_frame_control": "the fifth frame from the same parsed C/S position; this isolates ten-frame cluster pooling from a matched single-frame representation"
   },
   "model": {
     "token_dim": 128,
@@ -45,17 +45,16 @@
     "subset_classification_weight": 0.5,
     "sufficiency_weight": 0.25,
     "minimality_weight": 0.25,
-    "selected_full_weight": 1.0,
-    "selected_subset_weight": 0.5,
     "sufficiency_tolerance": 0.05,
-    "deletion_margin": 0.1
+    "deletion_margin": 0.10
   },
   "policy": {
     "fixed_visual_budget": 3,
     "adaptive_min_visual_units": 1,
     "adaptive_max_visual_units": 6,
-    "adaptive_confidence_margin": 0.2,
-    "offline_retention_only": true
+    "adaptive_confidence_margin": 0.20,
+    "offline_retention_only": true,
+    "note": "The ranking can inspect all retained case evidence; this is an offline evidence-retention analysis, not a prospective acquisition-time policy."
   },
   "method_modules": {
     "M1": "position-consistent OCT cluster tokenization",
@@ -63,10 +62,21 @@
     "M3": "within-case deletion-counterfactual minimality objective and audit"
   },
   "source_only_ablation_families": {
-    "A1_raw_fixed": "M1 removed: single-frame tokens with fixed retention",
-    "A2_cluster_fixed": "M1 only: position-cluster tokens with fixed retention",
-    "A3_cluster_adaptive": "M1 plus M2",
-    "A4_ices_full": "M1 plus M2 plus M3",
+    "A1_raw_fixed": "M1 removed: same-C/S fifth-frame tokens, fixed three-unit attention retention",
+    "A2_cluster_fixed": "M1 only: ten-frame C/S cluster tokens, fixed three-unit attention retention",
+    "A3_cluster_adaptive": "M1+M2: cluster tokens with adaptive offline sufficiency retention, no M3 loss",
+    "A4_ices_full": "M1+M2+M3: cluster tokens, adaptive offline sufficiency retention, and deletion-minimality objective",
     "controls": ["full_evidence", "attention_fixed_cost", "random_fixed_cost"]
+  },
+  "test_lock": {
+    "new_policy_selection": "source-train/source-validation only",
+    "outer_test_use": "one frozen exploratory LOCO evaluation after all source-only gates pass",
+    "interpretation": "The parent study has already used the same cohort in prior experiments, so this is retrospective exploratory transport evaluation, not an untouched confirmatory test. A sixth hospital is required for confirmation."
+  },
+  "unavailable_evidence": {
+    "reviewed_roi_polygon_or_bbox": "not available; no lesion-localization or clinical-semantic-grounding claim is permitted",
+    "device_order_confirmation": "not yet documented; C/S groups are reproducible machine fields but anatomical order requires local verification",
+    "sixth_hospital": "not supplied",
+    "multi_reader_study": "not supplied"
   }
 }

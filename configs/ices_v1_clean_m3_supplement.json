@@ -1,0 +1,56 @@
+{
+  "experiment_id": "case_intrinsic_counterfactual_evidence_sets_v1_clean_m3_supplement",
+  "status": "post_screen_exploratory_supplement_locked_before_supplementary_outcomes",
+  "parent_screen": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1/source_ablation_summary.json",
+  "endpoint": "CIN2+",
+  "scope": "source-train/source-validation-only post-screen supplement that isolates selected-set, sufficiency, and deletion-minimality loss terms",
+  "claim_boundary": "This supplement quantifies retrospective model dependence on observed within-case evidence units. It is exploratory because it follows a completed failed development screen; it does not identify lesions, establish pathology causality, establish acquisition-time savings, or provide clinical deployment validation.",
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "fold_assignments": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/formal_v1/fold_assignments.csv",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1/supplement_clean_m3",
+  "feature_cache": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1/features/ices_position_cluster_resnet50.pt",
+  "seeds": [20260905, 20260906, 20260907],
+  "image_encoder": {
+    "name": "torchvision_resnet50_imagenet1k_v2",
+    "frozen": true,
+    "feature_dim": 2048,
+    "feature_file": "not_used_when_feature_cache_is_explicit"
+  },
+  "model": {
+    "token_dim": 128,
+    "transformer_layers": 2,
+    "attention_heads": 4,
+    "dropout": 0.1,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "batch_size": 48,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "visual_keep_probability": 0.75,
+    "subset_classification_weight": 0.5,
+    "selected_full_weight": 1.0,
+    "selected_subset_weight": 0.5,
+    "sufficiency_weight": 0.25,
+    "minimality_weight": 0.25,
+    "sufficiency_tolerance": 0.05,
+    "deletion_margin": 0.10
+  },
+  "policy": {
+    "fixed_visual_budget": 3,
+    "adaptive_min_visual_units": 1,
+    "adaptive_max_visual_units": 6,
+    "adaptive_confidence_margin": 0.20,
+    "offline_retention_only": true
+  },
+  "clean_m3_arms": {
+    "cluster_selected_control": "base full-evidence and random-subset losses plus the selected-set full/subset classification terms",
+    "cluster_sufficiency_control": "selected control plus only the predeclared selected-set sufficiency loss",
+    "cluster_pure_m3": "sufficiency control plus only the predeclared within-case deletion-minimality loss",
+    "primary_clean_m3_contrast": "cluster_pure_m3 minus cluster_sufficiency_control; all non-minimality loss terms are identical"
+  },
+  "test_lock": {
+    "outer_test_use": "forbidden in this supplement",
+    "outer_test_labels_opened": false,
+    "outer_test_predictions_written": false
+  }
+}

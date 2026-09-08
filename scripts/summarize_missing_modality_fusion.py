@@ -142,7 +142,7 @@ def main():
     for mode in modes:
         av = result['averages'][mode]
         text.append(f"| {mode} | {av['TCO']['macro_ap']:.4f} | {np.mean([av[p]['macro_ap'] for p in NAMES]):.4f} | {av['TCO']['auroc']:.4f} |")
-    text += ['', '## Paired Factor Effects', '', '| Contrast | Complete-input delta AP [95% CI] | Seven-pattern mean delta AP [95% CI] |', '|---|---|---|']
+    text += ['', '## 配对因素效应', '', '| 对比 | 完整输入 ΔAP [95% CI] | 七模式平均 ΔAP [95% CI] |', '|---|---|---|']
     for name, effects in result['paired_contrasts'].items():
         cols = []
         for key in ('complete', 'seven_pattern_average'):
@@ -150,9 +150,9 @@ def main():
             lo, hi = e['patient_bootstrap_95ci']
             cols.append(f"{e['delta']:+.4f} [{lo:+.4f}, {hi:+.4f}]")
         text.append('| '+name+' | '+' | '.join(cols)+' |')
-    text += ['', f"Unique validation patients: {result['unique_validation_patients']}. Repeated folds and random seeds do not increase the case count. Intervals are unadjusted exploratory paired patient-bootstrap intervals.", '',
-             'This run does not use site supervision, OOF gain, or LLM verification, so results must not be attributed to those modules. If all cases have all three modalities, missingness results are simulated stress tests rather than a naturally missing cohort validation.', '',
-             'Per-centre, per-seed, seven-pattern metrics, nested missingness curves, internal calibration thresholds, and calibration positive counts are in summary.json. Human clinical review remains pending and this is not clinical deployment certification.']
+    text += ['', f"独立验证患者{result['unique_validation_patients']}名；重复划分和随机种子不扩充病例数。区间为未校正的探索性患者配对bootstrap区间。", '',
+             '本轮未使用点位监督、OOF收益或LLM，因此不能将结果归因于这三个模块。现有病例全部具有三种模态，缺失实验是模拟压力测试，不是自然缺失队列验证。', '',
+             '逐中心、逐种子、7种模式、20次嵌套缺失曲线、内部校准阈值和校准阳性数详见summary.json。临床人工核验pending，不构成临床应用认证。']
     (OUT/'REPORT.md').write_text('\n'.join(text)+'\n')
     print(json.dumps({'status': 'summary_complete', 'runs': len(rows)}), flush=True)
 

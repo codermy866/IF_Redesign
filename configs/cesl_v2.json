@@ -1,0 +1,27 @@
+{
+  "experiment_id": "cervix_cesl_v2_loco_exploratory",
+  "parent_experiment": "cervix_cognition_alignment_formal_v1_loco",
+  "seed": 20260903,
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/cesl_v2",
+  "endpoint": "CIN2+",
+  "outer_split": "leave-one-centre-out",
+  "source_only_policy_fitting": true,
+  "atom_definition": {
+    "clinical": ["age", "hpv", "tct"],
+    "colposcopy": "individual accessible frames, capped at 4",
+    "oct": "individual accessible B-scans, capped at 6"
+  },
+  "relative_evidence_cost_units": {
+    "clinical": 0.0,
+    "colposcopy_frame": 1.0,
+    "oct_bscan": 1.0
+  },
+  "counterfactual_distribution": "source-centre matched donor; recipient/donor/provenance audited",
+  "success_criteria": {
+    "primary": "held-out macro-centre AUPRC at a matched evidence-cost budget",
+    "mechanism": "counterfactual evidence-value rank stability exceeds matched attribution baseline",
+    "safety": "no pre-specified excess in calibration error or sensitivity loss"
+  },
+  "claim_boundary": "conditional replacement robustness only; no lesion-causal or clinical-deployment claim"
+}

@@ -1,0 +1,23 @@
+{
+  "experiment_id": "cervix_cognition_alignment_pilot_v0",
+  "seed": 20260902,
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "model": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/models/pretrained/Qwen3-VL-2B-Instruct",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/pilot_v0",
+  "endpoint": "CIN2+",
+  "require_colposcopy": true,
+  "require_oct": true,
+  "one_case_per_patient": true,
+  "samples_per_split": {
+    "train": 64,
+    "val": 20,
+    "test": 20
+  },
+  "positive_fraction": 0.5,
+  "max_colposcopy_images": 4,
+  "max_oct_images": 6,
+  "panel_tile_size": 280,
+  "inference_max_pixels": 602112,
+  "max_new_tokens": 384,
+  "bootstrap_replicates": 1000
+}

@@ -1,0 +1,15 @@
+{
+  "experiment_id": "case_intrinsic_counterfactual_evidence_sets_v1_m1_frame01_supplement",
+  "status": "post_screen_exploratory_m1_reference_sensitivity_locked_before_supplementary_outcomes",
+  "scope": "source-train/source-validation-only reference-frame sensitivity analysis for M1",
+  "claim_boundary": "This exploratory supplement tests sensitivity of a retrospective model representation to which single frame is used as its matched C/S control. It makes no lesion, pathology-causality, acquisition-time, transport, or clinical-deployment claim.",
+  "fold_assignments": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/formal_v1/fold_assignments.csv",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1/supplement_m1_frame01",
+  "feature_cache": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/ices_v1/supplement_m1_frame_sensitivity/features/m1_frame_sensitivity_resnet50.pt",
+  "seeds": [20260905, 20260906, 20260907],
+  "image_encoder": {"name": "torchvision_resnet50_imagenet1k_v2", "frozen": true, "feature_dim": 2048, "feature_file": "not_used_when_feature_cache_is_explicit"},
+  "feature_key_by_backbone": {"raw_m1_ablation": "frame1_features"},
+  "model": {"token_dim": 128, "transformer_layers": 2, "attention_heads": 4, "dropout": 0.1, "max_epochs": 50, "early_stopping_patience": 10, "batch_size": 48, "learning_rate": 0.0003, "weight_decay": 0.0001, "visual_keep_probability": 0.75, "subset_classification_weight": 0.5, "sufficiency_weight": 0.25, "minimality_weight": 0.25, "sufficiency_tolerance": 0.05, "deletion_margin": 0.10},
+  "policy": {"fixed_visual_budget": 3, "adaptive_min_visual_units": 1, "adaptive_max_visual_units": 6, "adaptive_confidence_margin": 0.20, "offline_retention_only": true},
+  "test_lock": {"outer_test_use": "forbidden in this supplement", "outer_test_labels_opened": false, "outer_test_predictions_written": false}
+}

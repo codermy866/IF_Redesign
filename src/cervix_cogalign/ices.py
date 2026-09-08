@@ -218,3 +218,4 @@ def selected_visual_slot_matrix(mask: torch.Tensor, max_visual_units: int) -> tu
 def visual_cost(mask: torch.Tensor) -> np.ndarray:
     """Number of retained visual evidence units per case."""
     return mask[:, 1:].sum(dim=1).detach().cpu().numpy().astype(int)
+

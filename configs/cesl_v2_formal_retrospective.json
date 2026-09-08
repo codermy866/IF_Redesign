@@ -1,0 +1,92 @@
+{
+  "experiment_id": "cervix_cesl_v2_formal_retrospective_loco_20260905",
+  "status": "locked_before_cesl_held_out_predictions",
+  "parent_experiment": "cervix_cognition_alignment_formal_v1_loco",
+  "endpoint": "CIN2+",
+  "scope": "retrospective raw-atom evidence-retention study; relative evidence-cost units only",
+  "claim_boundary": "Conditional replacement robustness and offline sufficient-evidence retention only. This protocol does not identify lesion causality, establish real acquisition-time savings, provide clinical deployment validation, or replace pathology review.",
+  "manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/JBD_2026/cervix_lcad_rasa/outputs/publishable/manifests/full_manifest_publishable_with_llm_pseudo.csv",
+  "atom_manifest": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/cesl_v2/raw_atoms.jsonl",
+  "fold_assignments": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/formal_v1/fold_assignments.csv",
+  "output_dir": "/data2/hmy/VLM_Caus_Rm_Mics/experiments/exp_infofusion_redesign_2026/03_new_experiment_design/results/cesl_v2_formal",
+  "seeds": [20260905, 20260906, 20260907],
+  "outer_split": "leave-one-centre-out reused exactly from Formal v1",
+  "source_only_policy_fitting": true,
+  "source_only_calibration": true,
+  "source_only_threshold_selection": true,
+  "image_encoder": {
+    "name": "torchvision_resnet50_imagenet1k_v2",
+    "frozen": true,
+    "feature_dim": 2048,
+    "input_size": 224,
+    "batch_size": 64,
+    "feature_file": "features/raw_atom_resnet50.pt"
+  },
+  "atom_schema": {
+    "slots": ["clinical", "colposcopy_00", "colposcopy_01", "colposcopy_02", "colposcopy_03", "oct_00", "oct_01", "oct_02", "oct_03", "oct_04", "oct_05"],
+    "clinical_fields": ["age", "hpv", "tct"],
+    "relative_evidence_cost_units": {
+      "clinical": 0.0,
+      "colposcopy_frame": 1.0,
+      "oct_bscan": 1.0
+    }
+  },
+  "model": {
+    "token_dim": 128,
+    "transformer_layers": 2,
+    "attention_heads": 4,
+    "dropout": 0.1,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "batch_size": 48,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "visual_keep_probability": 0.75,
+    "css_group_dro_weight": 0.25,
+    "css_rank_stability_weight": 0.10
+  },
+  "counterfactual_distribution": {
+    "draws": 3,
+    "main": "source-train donor pool; matched on atom kind/position and declared clinical nuisance stratum when available; no outcome label is used for donor selection",
+    "variants": ["main_matched", "center_only", "pooled_unmatched"],
+    "test_centre_rule": "Held-out recipients use source-train donors only. Same-centre matching is unavailable by design at a held-out centre and is recorded as a transport donor condition."
+  },
+  "policies": {
+    "C0_full_evidence": "all available atoms",
+    "C1_attention_fixed_budget": "same no-CSS backbone; attention-ranked offline retention at source-validation matched budget",
+    "C2_cev_fixed_budget": "same no-CSS backbone; predicted-class conditional counterfactual value ranked offline retention at matched budget",
+    "C3_cev_adaptive": "same no-CSS backbone; CEV-ranked sufficient-evidence stopping",
+    "C4_cesl_css": "CSS backbone; CEV-ranked sufficient-evidence stopping",
+    "random_fixed_budget": "negative selection control matched to C3 validation budget",
+    "uncertainty_only": "fixed acquisition-order, confidence-only stopping control"
+  },
+  "stopping_rule": {
+    "minimum_visual_atoms": 1,
+    "maximum_visual_atoms": 6,
+    "margin_gamma": 0.20,
+    "residual_cev_epsilon": 0.02,
+    "uncertainty_margin_gamma": 0.20,
+    "fixed_order": ["colposcopy_00", "colposcopy_01", "colposcopy_02", "colposcopy_03", "oct_00", "oct_01", "oct_02", "oct_03", "oct_04", "oct_05"]
+  },
+  "primary_estimand": "macro-centre AUPRC of the three-seed ensemble on held-out cases",
+  "secondary_metrics": ["AUROC", "balanced_accuracy", "sensitivity", "specificity", "Brier", "ECE", "calibration_slope", "calibration_intercept", "mean_visual_atom_count", "relative_evidence_cost"],
+  "bootstrap": {
+    "replicates": 5000,
+    "unit": "patient sampled within centre and outcome strata",
+    "multiplicity": "Holm adjustment within the predeclared primary C4-versus-policy family"
+  },
+  "falsification_rules": {
+    "M1": "CEV high-ranked atoms must show larger held-out observed-label replacement loss than matched attention-ranked and matched random atoms under main_matched q.",
+    "M2": "C3 must expose a performance-cost frontier rather than merely report a lower atom count; C3 is not supported if the fixed-budget or uncertainty-only controls provide the same frontier.",
+    "M3": "C4 must improve held-out centre rank/stopping stability or worst-centre performance relative to C3; otherwise CSS has no demonstrated role.",
+    "safety": "No clinical safety claim is made. Calibration and threshold-based sensitivity changes are reported with uncertainty rather than interpreted as deployment safety."
+  },
+  "robustness_scenarios": ["missing_clinical", "missing_colposcopy", "missing_oct", "reduced_colposcopy_atoms", "reduced_oct_atoms"],
+  "unavailable_evidence_gates": {
+    "temporal_validation": "No structured acquisition date is available in the frozen manifest; image-path timestamps are not treated as a validated temporal reference.",
+    "independent_external_hospital": "No sixth independent hospital cohort has been supplied.",
+    "prospective_silent_study": "Requires new data collection, protocol, and applicable ethics/governance review.",
+    "multi_reader_human_ai_study": "No reader-study dataset or clinician-reader protocol has been supplied.",
+    "reviewed_roi_or_polygon": "No clinician-reviewed ROI/polygon/bbox is used or inferred."
+  }
+}

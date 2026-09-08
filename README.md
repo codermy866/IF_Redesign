@@ -1,10 +1,10 @@
 # IF Redesign core code
 
 This repository contains reusable core code for evidence-centric multimodal
-diagnosis research: Counterfactual Evidence Sufficiency Learning (CESL),
-case-intrinsic evidence sets (ICES), cross-fitted diagnostic gain learning,
-missing-modality fusion screens, counterfactual visual re-inspection utilities,
-and bootstrap-based analysis.
+diagnosis research: Diagnostic Evidence Alignment (DEA), Counterfactual
+Evidence Sufficiency Learning (CESL), case-intrinsic evidence sets (ICES),
+cross-fitted diagnostic gain learning, missing-modality fusion screens,
+counterfactual visual re-inspection utilities, and bootstrap-based analysis.
 
 No data, image files, patient identifiers, trained weights, logs, result tables, figures, or manuscript material are included.
 
@@ -57,8 +57,36 @@ python scripts/launch_missing_modality_fusion.py
 
 The feature extractor uses the torchvision ImageNet ResNet-50 weights and may download them on first use. For CPU-only validation, pass `--device cpu` directly to `scripts/extract_cesl_atom_features.py`.
 
+## Diagnostic Evidence Alignment (DEA)
+
+Read `docs/DIAGNOSTIC_EVIDENCE_ALIGNMENT.md` and `configs/dea_v1.json` before running
+any DEA job. The method trains adapter-only Qwen2.5-VL / LLaVA-Med arms (`zero_shot`,
+`sft`, `alignment`, `alignment_dpo`, plus the 3B `alignment_no_rank` ablation) under
+five-centre LOCO with cross-fitted teacher utility, pairwise ranking alignment, and
+visual DPO preference optimization.
+
+Typical order:
+
+```bash
+PYTHONPATH=src:scripts .venv/bin/python scripts/build_dea_dataset.py --config configs/dea_v1.json
+.venv/bin/python scripts/prepare_dea_models.py
+PYTHONPATH=src:scripts .venv/bin/python scripts/launch_dea_campaign.py --prepare
+CUDA_VISIBLE_DEVICES=0,1 PYTHONPATH=src:scripts .venv/bin/python scripts/launch_dea_campaign.py
+PYTHONPATH=src:scripts .venv/bin/python scripts/summarize_dea.py --config configs/dea_v1.json
+```
+
+Provide your own de-identified fold assignments, clinical sidecar, site labels,
+cluster manifest, and cross-fitted gain targets at the paths declared in
+`configs/dea_v1.json`. No data, predictions, adapters, or result tables are
+stored in this repository.
+
 ## Method components
 
+- `src/cervix_cogalign/evidence_alignment.py`: DEA prompts, chain targets, pairwise rank loss, DPO loss, and LoRA-only guardrails.
+- `scripts/run_dea.py`: adapter-only SFT, alignment, DPO, and frozen evaluation for DEA arms.
+- `scripts/build_dea_dataset.py`: label-independent fixed-budget site selection and preference-pair construction.
+- `scripts/launch_dea_campaign.py`: resumable dual-GPU campaign queue without killing existing jobs.
+- `scripts/summarize_dea.py`: patient-level metrics, ranking audits, and paired ablation summaries.
 - `src/cervix_cogalign/cesl.py`: evidence atoms, outcome-blind source-only donor pools, conditional counterfactual evidence values, adaptive sufficiency stopping, and centre/stability regularisation.
 - `src/cervix_cogalign/ices.py`: set-transformer evidence modeling, fixed/adaptive evidence retention masks, modality dropout, and visual-cost accounting.
 - `src/cervix_cogalign/sequence_evidence.py`: OCT position-cluster parsing and within-case deletion-counterfactual sufficiency/minimality losses.
