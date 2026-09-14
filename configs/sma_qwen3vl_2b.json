@@ -1,0 +1,17 @@
+{
+  "ranks": {"D": 4, "S": 6, "A": 6},
+  "task_exposure": {"D": 0.2912430864, "S": 0.3532488749, "A": 0.3555080387},
+  "site_positive_fraction": 0.5,
+  "steps": 120,
+  "learning_rate": 0.0001,
+  "head_learning_rate": 0.0003,
+  "weight_decay": 0.001,
+  "gradient_clip_norm": 1.0,
+  "direction_margin": 0.0,
+  "gap_delta": 0.05,
+  "gap_weight": 0.25,
+  "evaluation_batch_size": 8,
+  "max_pixels": 200704,
+  "lora_dropout": 0.0,
+  "seed": 17
+}
