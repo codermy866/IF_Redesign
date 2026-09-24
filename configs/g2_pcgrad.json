@@ -1,0 +1,14 @@
+{
+  "method": "G2_PCGRAD",
+  "lambda_z": 0.1,
+  "pooling": "masked_mean_site_probability",
+  "shared_gradient_rule": "symmetric_pcgrad",
+  "epochs": 2,
+  "patient_batch_size": 4,
+  "encoder_learning_rate": 0.0001,
+  "fusion_head_learning_rate": 0.0003,
+  "weight_decay": 0.01,
+  "gradient_clip_norm": 1.0,
+  "clinical_branch_frozen": true,
+  "fusion_fit_partition": "inner_validation_only"
+}

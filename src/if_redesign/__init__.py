@@ -1,16 +1,14 @@
-"""Core components for Supervision-Matched Adaptation."""
+"""Core components for granularity-selective OCT phenotype fusion."""
 
-from .allocation import AllocationResult, derive_allocation
-from .labels import build_site_targets, parse_positive_sites
-from .objectives import evidence_assimilation_loss, evidence_utility
-from .sampling import build_training_schedule
+from .fusion import FittedFusion, fit_nonnegative_fusion, masked_mean_site_probability
+from .labels import SiteSupervision, build_site_supervision, build_site_targets, parse_positive_sites
+from .modeling import ConvNeXtFeatureTail, PatientFusionHead
+from .pcgrad import gradient_cosine, symmetric_pcgrad
+from .training import G2PCGradTrainer, StepStatistics
 
 __all__ = [
-    "AllocationResult",
-    "build_site_targets",
-    "build_training_schedule",
-    "derive_allocation",
-    "evidence_assimilation_loss",
-    "evidence_utility",
-    "parse_positive_sites",
+    "ConvNeXtFeatureTail", "FittedFusion", "G2PCGradTrainer", "PatientFusionHead",
+    "SiteSupervision", "StepStatistics", "build_site_supervision", "build_site_targets",
+    "fit_nonnegative_fusion", "gradient_cosine", "masked_mean_site_probability",
+    "parse_positive_sites", "symmetric_pcgrad",
 ]

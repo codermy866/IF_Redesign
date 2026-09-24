@@ -1,83 +1,82 @@
-# Supervision-Matched Adaptation for Cervical OCT
+# Granularity-Selective Phenotype Fusion
 
-This repository contains the core implementation of Supervision-Matched Adaptation (SMA) for
-cervical OCT vision-language models. The method uses lesion positions recorded in the clinical
-second-reading field as direct site-level supervision.
+This repository contains the core implementation of the final cervical OCT information-fusion
+method, **G2-PCGrad**. It combines a frozen clinical risk score with OCT phenotype evidence learned
+from site-level secondary-reading labels.
 
-SMA contains four components:
+The method separates two supervision resolutions:
 
-1. parse second-reading position numbers into site-level lesion targets;
-2. control positive lesion-site exposure during training while retaining natural validation prevalence;
-3. route diagnosis, site localization, and evidence-assimilation supervision through separate LoRA
-   subspaces under a fixed total rank budget;
-4. derive task ranks and task exposure by minimizing
+- `z`: local OCT lesion semantics. Numbers in the secondary-reading field identify positive OCT
+  positions; unavailable positions are masked rather than treated as negatives.
+- `y`: patient-level CIN2+ pathology used to optimize the fused patient prediction.
 
-   `J(r,q) = sum_k lambda_k [B_k(r_k) + alpha * nu_k * r_k / (T * q_k)]`.
+Both losses update the same trainable OCT representation. When their shared gradients conflict,
+G2 applies symmetric two-task PCGrad. Projection is applied only when the global gradient dot
+product is negative. The site head receives only the scaled local gradient, and the patient fusion
+head receives only the patient-level gradient.
 
-`B_k(r_k)` is residual gradient spectral energy, `nu_k` is normalized gradient variance, `r_k` is
-task-specific LoRA rank, and `q_k` is the task's training exposure.
+## Locked method structure
+
+```text
+frozen clinical Qwen3-VL risk ─────────────────────────┐
+                                                      ├─ patient fusion loss y
+OCT fixed ConvNeXt prefix → trainable final block     │
+                             ├─ site head → loss z    │
+                             └─ masked mean phenotype ┘
+
+shared final-block gradients: symmetric PCGrad(lambda_z * g_z, g_y)
+final predictor: nonnegative two-feature logistic fusion fit on inner validation only
+```
+
+The clinical branch is represented by precomputed logits, preserving the frozen clinical model.
 
 ## Repository layout
 
 ```text
-configs/sma_qwen3vl_2b.json       Method configuration
-src/if_redesign/labels.py         Second-reading lesion-site targets
-src/if_redesign/sampling.py       Task and positive-site exposure schedules
-src/if_redesign/allocation.py     Source-derived rank/exposure allocation
-src/if_redesign/modeling.py       Task-routed LoRA construction
-src/if_redesign/objectives.py     Diagnosis, localization, and assimilation losses
-src/if_redesign/metrics.py        Site, diagnosis, and evidence-utility metrics
-scripts/derive_allocation.py      Allocation command-line entry point
-scripts/train_sma.py              Qwen3-VL training and evaluation entry point
-tests/                            Unit tests for the core method
+configs/g2_pcgrad.json          Locked method hyperparameters
+src/if_redesign/labels.py       Secondary-reading labels and missing-site masks
+src/if_redesign/modeling.py     ConvNeXt feature tail and training-time fusion head
+src/if_redesign/pcgrad.py       Symmetric two-task PCGrad
+src/if_redesign/training.py     Patient-bag G2 optimization step
+src/if_redesign/fusion.py       Masked pooling and inner-validation logistic fusion
+src/if_redesign/metrics.py      Patient/site binary metrics
+tests/                          Mathematical and routing tests
 ```
 
-## Installation
+## Installation and validation
 
 ```bash
 python -m venv .venv
-.venv/bin/pip install -e .
+.venv/bin/pip install -e '.[test]'
+.venv/bin/python -m pytest -q
 ```
 
-## Input format
-
-Training and validation data are JSON Lines files. Each row has a `task` field.
-
-```json
-{"task":"diag","patient_key":"P001","image":"/path/frame.png","prompt":"...","label":1}
-{"task":"site","patient_key":"P001","site":3,"image":"/path/site3.png","prompt":"...","label":1}
-{"task":"assim","patient_key":"P001","image":"/path/frame.png","baseline_prompt":"...","prompt":"...","label":1,"p_gain":0.2}
-```
-
-Generate site labels directly from a second-reading entry:
+## Core usage
 
 ```python
-from if_redesign.labels import build_site_targets
+import torch
+from if_redesign import ConvNeXtFeatureTail, G2PCGradTrainer, PatientFusionHead
 
-targets = build_site_targets("2, 5, 9", number_of_sites=12)
+encoder = ConvNeXtFeatureTail.from_torchvision().cuda()
+patient_head = PatientFusionHead().cuda()
+optimizer = torch.optim.AdamW([
+    {"params": encoder.parameters(), "lr": 1e-4},
+    {"params": patient_head.parameters(), "lr": 3e-4},
+], weight_decay=0.01)
+trainer = G2PCGradTrainer(encoder, patient_head, optimizer, lambda_z=0.1)
+
+statistics = trainer.step(
+    fixed_features=fixed_convnext_prefix_maps,
+    clinical_risk=source_standardized_clinical_logits,
+    patient_labels=cin2plus_labels,
+    site_labels=oct_reread_site_labels,
+    site_valid_mask=available_oct_site_mask,
+)
 ```
 
-## Derive a supervision-matched allocation
+After OCT training, pool site probabilities with `masked_mean_site_probability` and fit
+`fit_nonnegative_fusion` using the source inner-validation partition. Apply that transformation
+unchanged to held-out or external patients.
 
-```bash
-derive-sma-allocation \
-  --spectral-energy supervision_spectral_energy.csv \
-  --gradient-variance gradient_variance.csv \
-  --output allocation.json
-```
-
-## Train
-
-```bash
-train-sma \
-  --config configs/sma_qwen3vl_2b.json \
-  --model /path/to/Qwen3-VL-2B-Instruct \
-  --train-jsonl /path/to/training_tasks.jsonl \
-  --validation-jsonl /path/to/validation_tasks.jsonl \
-  --output /path/to/output \
-  --device cuda:0
-```
-
-Training-site sampling may be balanced, but validation data must retain its natural clinical
-distribution. Patient identifiers, clinical data, OCT images, checkpoints, and experiment results are
-not included in this repository.
+Patient identifiers, clinical records, OCT images, cached features, model weights, predictions,
+experimental results, manuscripts, and figures are intentionally excluded.
