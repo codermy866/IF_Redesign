@@ -1,82 +1,81 @@
-# Granularity-Selective Phenotype Fusion
+# IF_Redesign: Stagewise Multimodal Information Innovation
 
-This repository contains the core implementation of the final cervical OCT information-fusion
-method, **G2-PCGrad**. It combines a frozen clinical risk score with OCT phenotype evidence learned
-from site-level secondary-reading labels.
+This repository contains the current core implementation for our Information Fusion study on **stage-ordered multimodal information fusion**.
 
-The method separates two supervision resolutions:
+## Current method
 
-- `z`: local OCT lesion semantics. Numbers in the secondary-reading field identify positive OCT
-  positions; unavailable positions are masked rather than treated as negatives.
-- `y`: patient-level CIN2+ pathology used to optimize the fused patient prediction.
+The current method is built around two components:
 
-Both losses update the same trainable OCT representation. When their shared gradients conflict,
-G2 applies symmetric two-task PCGrad. Projection is applied only when the global gradient dot
-product is negative. The site head receives only the scaled local gradient, and the patient fusion
-head receives only the patient-level gradient.
+1. **Prior-anchored belief updating**  
+   A new modality does not reconstruct the prediction from scratch. It updates a pre-existing belief:
 
-## Locked method structure
+   `logit(q1) = logit(q0) + beta * r`, with `beta >= 0`.
 
-```text
-frozen clinical Qwen3-VL risk ─────────────────────────┐
-                                                      ├─ patient fusion loss y
-OCT fixed ConvNeXt prefix → trainable final block     │
-                             ├─ site head → loss z    │
-                             └─ masked mean phenotype ┘
+2. **Stagewise Orthogonal Proper-Score Innovation (SOPI)**  
+   Modality value is measured by the reduction in outcome-aligned predictive risk:
 
-shared final-block gradients: symmetric PCGrad(lambda_z * g_z, g_y)
-final predictor: nonnegative two-feature logistic fusion fit on inner validation only
-```
+   `I_l(F1:F0) = E[l(Y,p0) - l(Y,p1)]`.
 
-The clinical branch is represented by precomputed logits, preserving the frozen clinical model.
+   Brier and log-score realizations are implemented. At the Bayes predictors, the log-score form reduces to conditional mutual information `I(Y; O | C)`.
+
+The central distinction is:
+
+> **Posterior movement is not task-relevant information.**
+
+A prediction can move substantially after a new modality is observed while becoming less correct. SOPI evaluates whether the update is useful for the realized outcome.
 
 ## Repository layout
 
 ```text
-configs/g2_pcgrad.json          Locked method hyperparameters
-src/if_redesign/labels.py       Secondary-reading labels and missing-site masks
-src/if_redesign/modeling.py     ConvNeXt feature tail and training-time fusion head
-src/if_redesign/pcgrad.py       Symmetric two-task PCGrad
-src/if_redesign/training.py     Patient-bag G2 optimization step
-src/if_redesign/fusion.py       Masked pooling and inner-validation logistic fusion
-src/if_redesign/metrics.py      Patient/site binary metrics
-tests/                          Mathematical and routing tests
+src/if_redesign/stagewise.py   Prior-anchored fusion operator and site evidence pooling
+src/if_redesign/sopi.py        Brier/log SOPI, posterior movement, stagewise accounting
+scripts/evaluate_sopi.py       CLI for held-out prediction tables
+docs/METHOD.md                 Mathematical method summary
+docs/EXPERIMENT_STATUS.md      Aggregate experimental status
+tests/test_stagewise.py        Prior-anchor mathematical tests
+tests/test_sopi.py             SOPI identities and falsification tests
+
+src/if_redesign/*.py           Earlier G2-PCGrad reference implementation
+configs/g2_pcgrad.json         Legacy/reference configuration
 ```
 
-## Installation and validation
-
-```bash
-python -m venv .venv
-.venv/bin/pip install -e '.[test]'
-.venv/bin/python -m pytest -q
-```
-
-## Core usage
+## Minimal usage
 
 ```python
+import numpy as np
 import torch
-from if_redesign import ConvNeXtFeatureTail, G2PCGradTrainer, PatientFusionHead
 
-encoder = ConvNeXtFeatureTail.from_torchvision().cuda()
-patient_head = PatientFusionHead().cuda()
-optimizer = torch.optim.AdamW([
-    {"params": encoder.parameters(), "lr": 1e-4},
-    {"params": patient_head.parameters(), "lr": 3e-4},
-], weight_decay=0.01)
-trainer = G2PCGradTrainer(encoder, patient_head, optimizer, lambda_z=0.1)
+from if_redesign import PriorAnchoredUpdater, estimate_sopi
 
-statistics = trainer.step(
-    fixed_features=fixed_convnext_prefix_maps,
-    clinical_risk=source_standardized_clinical_logits,
-    patient_labels=cin2plus_labels,
-    site_labels=oct_reread_site_labels,
-    site_valid_mask=available_oct_site_mask,
-)
+q0 = torch.tensor([0.30, 0.70])
+oct_evidence = torch.tensor([0.50, -0.25])
+
+updater = PriorAnchoredUpdater(beta_init=1.0, learnable_beta=False)
+q1 = updater(q0, oct_evidence)
+
+y = np.array([1, 0])
+V = estimate_sopi(y, q0.numpy(), q1.detach().numpy(), score="log")
+J = estimate_sopi(y, q0.numpy(), q1.detach().numpy(), score="brier")
 ```
 
-After OCT training, pool site probabilities with `masked_mean_site_probability` and fit
-`fit_nonnegative_fusion` using the source inner-validation partition. Apply that transformation
-unchanged to held-out or external patients.
+## Evaluation protocol
 
-Patient identifiers, clinical records, OCT images, cached features, model weights, predictions,
-experimental results, manuscripts, and figures are intentionally excluded.
+SOPI must be computed from **held-out or cross-fitted predictions**. In the cervical study, both `q0` and `q1` are generated under patient-level leave-one-centre-out evaluation. Pathology labels are required only for retrospective innovation estimation, not for forward inference.
+
+## Current experimental status
+
+The current study has completed:
+- four-centre patient-level LOCO evaluation;
+- Qwen3-VL and Phi-3.5-Vision cross-family experiments;
+- prior-feature versus explicit prior-anchor factorial analysis;
+- Brier/log proper-score innovation analysis;
+- within-centre patient-permutation falsification;
+- synthetic nuisance-rate verification;
+- finite-sample bias/coverage analysis;
+- negative tests for semantic recognition, hard orthogonality, robustness proxies, committor dynamics, and latent steering.
+
+Private clinical data, patient identifiers, model weights, OOF prediction tables, and manuscript files are intentionally excluded from this public repository.
+
+## Legacy reference
+
+The earlier G2-PCGrad phenotype-fusion implementation is retained because it serves as a specialized OCT reference baseline. It is no longer the primary methodological contribution of the repository.
