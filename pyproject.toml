@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "if-redesign-g2"
-version = "0.2.0"
-description = "Granularity-selective OCT phenotype fusion with symmetric PCGrad"
+name = "if-redesign"
+version = "0.3.0"
+description = "Stage-ordered prior-anchored fusion and proper-score innovation estimation"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
