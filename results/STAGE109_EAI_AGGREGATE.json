@@ -1,0 +1,95 @@
+{
+  "stage": 109,
+  "status": "GO_EXPLORATORY_ONLY",
+  "core_method_changed": false,
+  "wuda_wuhan_used": false,
+  "held_out_test": {
+    "n": 275,
+    "cin2plus": 32
+  },
+  "states": {
+    "C": {
+      "nll": 0.283951933,
+      "brier": 0.0837674806,
+      "auroc": 0.8438143004,
+      "auprc": 0.4466798222
+    },
+    "CO": {
+      "nll": 0.2585216732,
+      "brier": 0.0753850856,
+      "auroc": 0.8746141975,
+      "auprc": 0.5801250365
+    },
+    "CK": {
+      "nll": 0.2466894304,
+      "brier": 0.0718122491,
+      "auroc": 0.8768004115,
+      "auprc": 0.5876202427
+    },
+    "COK": {
+      "nll": 0.234373609,
+      "brier": 0.0671844822,
+      "auroc": 0.8797582305,
+      "auprc": 0.6470617404
+    }
+  },
+  "effects": {
+    "A_O": {
+      "estimate": 0.02543025984,
+      "ci95": [
+        0.01036527399,
+        0.04162425148
+      ]
+    },
+    "A_K": {
+      "estimate": 0.03726250265,
+      "ci95": [
+        0.01170387372,
+        0.06241801214
+      ]
+    },
+    "A_K_given_O": {
+      "estimate": 0.02414806414,
+      "ci95": [
+        0.00002602884,
+        0.047793043
+      ]
+    },
+    "R_O_to_K": {
+      "estimate": 0.01311443851,
+      "ci95": [
+        0.00721758348,
+        0.01899522488
+      ]
+    },
+    "colposcopy_advantage_reduction_fraction": {
+      "estimate": 0.3519473352,
+      "ci95": [
+        0.1931128662,
+        0.9765897633
+      ]
+    }
+  },
+  "link_to_main_method": {
+    "held_out_benefit_auc_for_OCT_advantage_sign": 0.8908862876,
+    "spearman_predicted_OCT_advantage_vs_residual_colposcopy": {
+      "estimate": -0.1435423098,
+      "ci95": [
+        -0.2666818699,
+        -0.01906634449
+      ]
+    },
+    "spearman_predicted_OCT_advantage_vs_redundancy": {
+      "estimate": 0.3793408483,
+      "ci95": [
+        0.2556074974,
+        0.4964615071
+      ]
+    }
+  },
+  "negative_controls": {
+    "robust_patient_correspondence_established": false,
+    "colposcopy_replacement_supported": false,
+    "uniform_cross_center_transport_supported": false
+  }
+}
