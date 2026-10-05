@@ -1,62 +1,130 @@
-# Current Method: Stagewise Multimodal Information Innovation
+# Method: Patient-Specific Evidence Advantage Learning
 
-## Scientific target
+## 1. Problem formulation
 
-The current method is designed for settings in which evidence arrives in stages. Let `C` denote the evidence already available, `O` a newly acquired modality, and `Y` the prediction target. The central question is not only whether `(C,O)` can predict `Y`, but whether `O` contributes task-relevant information beyond the belief already established from `C`.
+Let C_i denote clinical evidence already available for patient i, O_i the OCT evidence, and Y_i the pathology-referenced binary endpoint. The core problem is:
 
-We represent the evidence order by nested information states `F0 = sigma(C)` and `F1 = sigma(C,O)`.
+> **Should O_i be allowed to modify the current clinical belief for patient i?**
 
-## 1. Prior-anchored update
+The paper therefore treats multimodal fusion as a patient-specific evidence decision rather than unconditional feature combination.
 
-The pre-evidence belief is `q0 = P(Y=1|C)`. A multimodal encoder produces a scalar evidence score `r(C,O)`. The post-evidence prediction is constrained to update the previous belief:
+## 2. Clinical belief and OCT-induced candidate update
 
-```
-logit(q1) = logit(q0) + beta * r,    beta >= 0
-```
+The clinical predictor establishes:
 
-This is intentionally different from passing `q0` as an ordinary feature to an unconstrained joint predictor.
-
-## 2. Stagewise Proper-Score Innovation
-
-For a strictly proper scoring loss `ell`, define
-
-```
-I_ell(F1:F0) = E[ ell(Y,p0) - ell(Y,p1) ].
+```text
+z_i^0 = e_i = g_C(C_i)
+p_i^0 = sigmoid(z_i^0)
 ```
 
-This quantity measures outcome-aligned predictive-risk reduction rather than posterior displacement.
+Patient-level OCT representation h_i proposes an additive update:
 
-Two realizations are used:
-
-- Brier innovation `J`: at the Bayes predictors, `J = E[(p1-p0)^2]`.
-- Log-score innovation `V`: at the Bayes predictors, `V = I(Y;O|C)`.
-
-## 3. Cross-fitted estimation
-
-SOPI is estimated only from held-out/cross-fitted predictions:
-
-```
-I_hat = mean_i [ ell(Y_i, q0_i) - ell(Y_i, q1_i) ].
+```text
+Delta_i = Delta_theta(h_i)
+z_i^1 = z_i^0 + Delta_i
+p_i^1 = sigmoid(z_i^1)
 ```
 
-The outcome is used for retrospective attribution, not for forward inference.
+The additive form is important: OCT changes an existing belief rather than reconstructing the diagnosis independently.
 
-## 4. Orthogonality
+## 3. Patient-Specific Evidence Advantage
 
-At the true stage-specific predictive distributions, the first directional derivative of the proper-score risk difference vanishes. Under standard smoothness conditions, local nuisance-prediction error enters the SOPI estimand through second-order terms. This is a bias-robustness property, not a claim of uniformly lower finite-sample variance.
+For proper-score loss ell:
 
-## 5. Stagewise accounting
-
-For nested evidence states `F0 subset F1 subset ... subset FT`, proper-score innovation telescopes across stages. This allows a long diagnostic process to be decomposed into the predictive information added at each evidence transition.
-
-## Current cervical instantiation
-
-The current study uses:
-
-```
-age / HPV / cytology -> pre-OCT belief q0
-OCT evidence         -> anchored update q1
-pathology            -> retrospective SOPI evaluation
+```text
+A_i = ell(Y_i, p_i^0) - ell(Y_i, p_i^1)
 ```
 
-The MLLM/VLM backbone is treated as an evidence encoder. The primary methodological contribution is the stage-ordered fusion formulation and the information estimand, not a new Transformer block.
+A_i is the realized patient-level predictive consequence of admitting OCT.
+
+- A_i > 0: beneficial update;
+- A_i < 0: harmful update / negative fusion.
+
+The forward object is the conditional value:
+
+```text
+V(C,O) = E[A_i | C_i=C, O_i=O]
+```
+
+or the benefit sign B_i = 1[A_i > 0]. Pathology is used to construct training/evaluation targets only; it is unavailable at inference.
+
+## 4. Advantage estimation and selective updating
+
+Stage105 uses leakage-separated development roles:
+
+```text
+calibration -> fit benefit/advantage estimator
+selection   -> choose operating threshold
+validation  -> evaluate frozen policy
+```
+
+Let s_i be the forward advantage score. For threshold tau:
+
+```text
+S_i = 1[s_i > tau]
+z_i^final = z_i^0 + S_i * Delta_i
+p_i^final = sigmoid(z_i^final)
+```
+
+Primary evaluation includes diagnostic AUROC/AUPRC/NLL/Brier together with benefit AUC, update coverage, decision regret, realized gain and harmful-update frequency.
+
+## 5. Why this is not ordinary gating
+
+Ordinary gates learn a fusion weight or route primarily through the final diagnostic objective. Evidence Advantage explicitly supervises the **decision consequence of admitting a modality**:
+
+```text
+A_i = loss_before - loss_after
+```
+
+This directly targets help-versus-harm at the patient level.
+
+## 6. Validation boundaries from Stage106/107
+
+Two controls constrain the final claims.
+
+First, scalar risk-magnitude or sign-objective repairs did not independently establish a stronger contribution; they are not promoted as new theory.
+
+Second, wrong-patient replacement is valid only when the complete frozen policy is recomputed after replacing the modality. Reusing the recipient's original gate can produce apparent correspondence even under a null model.
+
+Accordingly:
+
+- Evidence Advantage is not described as a biological causal effect;
+- no mismatch-based causal claim is made without a valid full-policy replacement test;
+- source-centre performance is not presented as a universal transport guarantee.
+
+## 7. Exploratory Evidence Admission Intervention
+
+Stage109 is a separate Discussion-level mechanism analysis and does not alter the core method.
+
+Let K_i denote colposcopy evidence. A single shared additive prediction function is evaluated under binary admission indicators m_O and m_K:
+
+```text
+z(C,O,K) = z_C(C) + m_O Delta_O(O) + m_K Delta_K(K)
+```
+
+giving the states C, C+O, C+K and C+O+K.
+
+The held-out patient-level effects are:
+
+```text
+A_i^O      = L_i(C)   - L_i(C+O)
+A_i^K      = L_i(C)   - L_i(C+K)
+A_i^{K|O}  = L_i(C+O) - L_i(C+O+K)
+R_i^{O->K} = A_i^K - A_i^{K|O}
+```
+
+R_i^{O->K} measures how much of the original incremental predictive value of colposcopy becomes redundant after OCT is already admitted.
+
+This is an intervention on **information availability/admission**, not on the disease-generating process.
+
+## 8. Clinical interpretation boundary
+
+The current method supports a pre-colposcopy role for OCT but does not claim clinical replacement of colposcopy. Stage109 shows partial predictive redundancy while the residual colposcopy advantage remains positive.
+
+## 9. Frozen contribution hierarchy
+
+1. Patient-Specific Evidence Advantage.
+2. Advantage-Guided Selective Evidence Updating.
+3. Exploratory Evidence Admission Intervention for downstream residual-value analysis.
+
+The first two are the core Method. The third is a mechanism/Discussion extension.
