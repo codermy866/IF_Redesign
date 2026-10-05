@@ -1,0 +1,21 @@
+{
+  "stage": "Stage105",
+  "date": "2026-10-05",
+  "status": "completed_screening_and_independent_threshold_evaluation",
+  "scope": "four centres x two seeds; aggregate metrics only",
+  "independent_threshold_protocol": {
+    "benefit_auc_mean": 0.7230688387,
+    "benefit_auc_min": 0.6379781421,
+    "benefit_auc_max": 0.8007994670,
+    "benefit_auc_above_chance_cells": "8/8",
+    "selected_policy_regret_better_than_always_update": "4/8",
+    "realized_gain_over_clinical_positive": "7/8",
+    "selected_coverage_min": 0.2636363636,
+    "selected_coverage_max": 0.9693877551
+  },
+  "interpretation": {
+    "supported": "patient-specific benefit of accepting an OCT update is predictably non-random across all tested fold-seed cells",
+    "not_yet_supported": "a single transferred threshold consistently dominates unconditional updating across all fold-seed cells",
+    "method_boundary": "Evidence Advantage is retained as the core mathematical object; threshold/risk-control policy remains an experimental component"
+  }
+}
