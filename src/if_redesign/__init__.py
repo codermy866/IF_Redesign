@@ -1,5 +1,14 @@
 """Core components for patient-specific multimodal evidence updating."""
 
+from .evidence_admission import (
+    EvidenceAdmissionEffects,
+    EvidenceAdmissionLogistic,
+    admission_logits,
+    correspondence_loss_gain,
+    evidence_admission_effects,
+    matched_replacement_indices,
+    mean_reduction_fraction,
+)
 from .evidence_advantage import (
     AdvantageSignEstimator,
     SelectiveUpdateEvaluation,
@@ -28,6 +37,8 @@ from .training import G2PCGradTrainer, StepStatistics
 __all__ = [
     "AdvantageSignEstimator",
     "ConvNeXtFeatureTail",
+    "EvidenceAdmissionEffects",
+    "EvidenceAdmissionLogistic",
     "FittedFusion",
     "G2PCGradTrainer",
     "PatientFusionHead",
@@ -35,18 +46,23 @@ __all__ = [
     "SelectiveUpdateEvaluation",
     "SiteSupervision",
     "StepStatistics",
+    "admission_logits",
     "advantage_features",
     "brier_contributions",
     "build_site_supervision",
     "build_site_targets",
+    "correspondence_loss_gain",
     "estimate_sopi",
     "evaluate_selective_update",
+    "evidence_admission_effects",
     "evidence_advantage",
     "fit_nonnegative_fusion",
     "gradient_cosine",
     "log_contributions",
     "masked_mean_site_evidence",
     "masked_mean_site_probability",
+    "matched_replacement_indices",
+    "mean_reduction_fraction",
     "parse_positive_sites",
     "per_patient_loss",
     "posterior_movement",
