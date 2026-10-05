@@ -1,51 +1,88 @@
 # Experimental Status
 
-This document records the current aggregate experimental status without exposing patient-level data.
+This document records the aggregate experimental evidence supporting the current IF_Redesign method. No patient-level data are exposed.
 
-## Completed confirmatory evaluation
+## Stage102: patient-specific OCT information
 
-- Four source centres with strict patient-level leave-one-centre-out evaluation.
-- Qwen3-VL-2B-Instruct main MLLM experiments.
-- Phi-3.5-Vision-Instruct full-LoRA cross-family experiments.
-- Phi-3.5-Vision frozen-representation transfer experiments.
-- 144 total MLLM runs across confirmatory and transfer settings.
+Patient-matched versus mismatched/correspondence analyses showed a positive pooled patient-specific OCT signal. This supports the premise that OCT contains diagnostic information beyond a fixed clinical prior.
 
-## Factorial stage-structure audit
+Boundary: fixed correspondence objectives were not uniformly robust across centres and are not retained as the final method.
 
-A frozen-feature factorial comparison separates four structures:
+## Stage103: discrete Evidence-State routing
 
-- flat fusion;
-- prior supplied as an ordinary feature;
-- direct prior anchoring;
-- prior anchoring with baseline-referenced contrast.
+The discrete patient state formulation `{clinical, OCT, fusion}` was tested.
 
-The current result supports explicit prior anchoring as the transferable structural principle. Baseline subtraction is not required.
+Result: state-utility relationships were centre-dependent and the learned routing policy produced unstable regret/negative-fusion behaviour.
 
-## SOPI validation
+Conclusion: discrete Evidence-State classification is not retained as the final core.
 
-Completed analyses include:
+## Stage104: absolute action-risk / JEV-like decision formulation
 
-- Brier and log-score innovation;
-- within-centre patient permutation;
-- posterior-movement versus outcome-aligned innovation;
-- controlled nuisance perturbation;
-- finite-sample bias/coverage analysis;
-- stagewise additivity checks.
+The model estimated absolute conditional losses for clinical, OCT, and fusion actions and formed a relative value from those estimates.
 
-A key falsification result is that within-centre permutation can increase posterior movement while making Brier/log innovation strongly negative. Therefore posterior movement is not a valid substitute for task-relevant information gain.
+Result: the apparent reduction in negative fusion was largely explained by policy collapse toward the clinical-only action (approximately 97-100% clinical selection in the decisive folds).
 
-## Boundary experiments
+Conclusion: estimating several noisy absolute risks and subtracting them is rejected as the final formulation.
 
-The following hypotheses were tested and are not retained as the primary method:
+## Stage105: Direct Evidence Advantage
 
-- local semantic recognition as a proxy for patient-level innovation;
-- hard clinical-subspace orthogonality;
-- worst-centre robustness as a proxy for information value;
-- exact committor transition value;
-- latent committor/innovation steering.
+Stage105 directly targets the relative predictive consequence of accepting the OCT update:
 
-These negative results are retained as falsification boundaries rather than additional method modules.
+```
+A_i = loss_i(clinical) - loss_i(clinical + OCT update)
+```
+
+### Decisive two-centre probe
+
+The initial frozen-backbone probe produced positive advantage ranking/discrimination without clinical-only collapse. This provided the GO decision for Direct Evidence Advantage.
+
+### Four-centre x two-seed stability study
+
+A lower-variance benefit-sign estimator was evaluated over 8 fold-seed cells.
+
+The independent calibration -> threshold-selection -> validation protocol currently yields:
+
+- benefit AUC > 0.5 in **8/8** cells;
+- mean benefit AUC **0.723**;
+- benefit AUC range **0.638-0.801**;
+- positive realized gain over clinical in **7/8** cells;
+- selected-update coverage **0.264-0.969**;
+- decision regret lower than always-updating in **4/8** cells.
+
+### Interpretation
+
+The principal positive result is that the **patient-specific sign of OCT benefit is predictably non-random across every tested fold-seed cell**.
+
+The remaining weakness is threshold transfer: selecting one operating threshold on a source selection split does not yet yield uniformly lower regret on validation.
+
+Therefore the current method status is:
+
+```
+Evidence Advantage mathematical object         FROZEN / RETAIN
+Direct benefit prediction                      SUPPORTED
+Clinical-only policy collapse                  RESOLVED at score-learning level
+Universal selective threshold superiority      NOT YET SUPPORTED
+Finite-sample risk guarantee                    NOT CLAIMED
+```
+
+## Main paper implication
+
+The paper should claim that multimodal evidence has patient-specific decision consequences and that these consequences can be learned directly. It should not yet claim a universally dominating risk-controlled selective policy.
+
+The final experiment package should continue to report:
+
+- diagnostic AUROC/AUPRC/NLL/Brier;
+- benefit AUC;
+- update coverage;
+- decision regret;
+- harmful/negative update rate;
+- bootstrap confidence intervals;
+- comparison with DIRECT, GATE, state routing, absolute-risk decision models, and recent reliability-aware fusion baselines.
+
+## Clinical boundary
+
+The current IF study uses clinical information plus OCT and pathology reference. Colposcopy images are not part of the core IF input. Whether OCT can reduce the incremental need for subsequent colposcopy is reserved for Discussion/exploratory analysis and is not a current replacement claim.
 
 ## Public-repository policy
 
-The repository intentionally excludes patient identifiers, raw clinical data, OCT images, model weights, private OOF predictions, and manuscript files. Public code is restricted to the reusable method, validation utilities, and mathematical tests.
+Patient identifiers, raw images, private clinical records, model weights, private prediction tables, and manuscript files are excluded. Only reusable methodology, protocol definitions, aggregate results, and tests are published.
