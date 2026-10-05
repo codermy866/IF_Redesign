@@ -1,130 +1,165 @@
-# IF_Redesign: Patient-Specific Evidence Advantage for Selective Multimodal Updating
+# IF_Redesign: Patient-Specific Evidence Advantage for Trustworthy Multimodal Updating
 
-This repository contains the current core implementation for our Information Fusion study on **patient-specific evidence value and selective multimodal decision making**.
+This repository contains the current reproducible method package for the Information Fusion study on **patient-specific evidence value, selective multimodal updating, and exploratory downstream evidence redundancy**.
 
 ## Scientific question
 
-Conventional multimodal fusion often assumes that an available modality should contribute to every prediction. Our current formulation asks a different question:
+Conventional multimodal fusion often assumes that an available modality should contribute to every prediction. We instead ask:
 
-> **Should newly available evidence be allowed to modify the existing prediction for this patient?**
+> **Should newly available OCT evidence be allowed to modify the existing clinical belief for this patient?**
 
-For the cervical study, the existing belief is built from clinical evidence (age / HPV / cytology), and OCT supplies a candidate update before downstream colposcopy/biopsy.
+The core shift is:
 
-## Current method
-
-### 1. Prior-anchored candidate update
-
-Let `z0` denote the clinical logit and `delta(O)` the OCT-derived update:
-
-```
-z1 = z0 + delta(O)
-p0 = sigmoid(z0)
-p1 = sigmoid(z1)
+```text
+available modality -> fuse it
 ```
 
-The OCT branch proposes a candidate update rather than reconstructing the prediction from scratch.
+to:
+
+```text
+clinical belief -> candidate OCT update -> estimate patient-specific advantage -> accept/reject
+```
+
+## Core method
+
+### 1. Clinical-reference-anchored candidate update
+
+```text
+z0 = g_C(C)
+z1 = z0 + Delta(O)
+```
+
+OCT proposes an update to the existing clinical belief rather than replacing the clinical predictor.
 
 ### 2. Patient-Specific Evidence Advantage
 
-For a proper scoring loss `ell`, define the retrospective patient-level consequence of accepting the update as
+For proper-score loss ell:
 
-```
+```text
 A_i = ell(y_i, p0_i) - ell(y_i, p1_i)
 ```
 
-- `A_i > 0`: accepting OCT lowers predictive loss.
-- `A_i ~= 0`: OCT is approximately redundant.
-- `A_i < 0`: accepting OCT causes negative fusion for that patient.
+- A_i > 0: accepting OCT lowers predictive loss.
+- A_i ~= 0: OCT is approximately redundant.
+- A_i < 0: accepting OCT is harmful fusion for that patient.
 
-The core methodological shift is therefore from **modality weighting** to **decision-consequence estimation**.
+The forward model estimates whether the candidate OCT update is beneficial before pathology is observed.
 
-### 3. Advantage-guided selective updating
+### 3. Advantage-guided selective evidence updating
 
-A forward estimator predicts whether the candidate update is beneficial. The final prediction is
-
-```
-z_final = z1   if score_advantage > threshold
-          z0   otherwise
+```text
+S_i = 1[score_advantage > tau]
+z_final = z0 + S_i * Delta(O)
 ```
 
-Labels are used only to create retrospective advantage supervision on development data. Final inference uses no pathology label.
+Stage105 supports the learnability of patient-specific OCT benefit. A single transferred threshold is not uniformly dominant, so threshold/risk-control calibration is treated as an operating-policy problem rather than a universal guarantee.
 
-## Leakage-safe evaluation protocol
+## Exploratory Evidence Admission Intervention
 
-The current Stage105 protocol separates development roles:
+Colposcopy is **not** part of the core IF model. Stage109 is a separate mechanism analysis using an aligned clinical + OCT + colposcopy cohort.
 
+A single shared predictor is evaluated under four evidence states:
+
+```text
+C
+C + O
+C + K
+C + O + K
 ```
-calibration split -> fit advantage / benefit estimator
-selection split   -> choose acceptance threshold
-validation split  -> final held-out policy evaluation
+
+and defines:
+
+```text
+A^O      = L(C)   - L(C+O)
+A^K      = L(C)   - L(C+K)
+A^{K|O}  = L(C+O) - L(C+O+K)
+R^{O->K} = A^K - A^{K|O}
 ```
 
-The OCT/clinical prediction backbone is frozen while the advantage estimator is evaluated. The outer held-out centre and Wuhan remain outside the Stage105 screening analysis.
+Positive R^{O->K} means that colposcopy has less incremental predictive value after OCT has already been admitted. This is an **information-admission intervention**, not a biological causal-effect claim.
 
-## Current Stage105 result
+## Current aggregate evidence
 
-Across four centres and two seeds (8 fold-seed cells), the independent-threshold experiment currently shows:
+### Stage105: Direct Evidence Advantage
 
-- benefit discrimination AUC above chance in **8/8** cells;
+- four centres x two seeds;
+- benefit AUC > 0.5 in **8/8** fold-seed cells;
 - mean benefit AUC **0.723** (range **0.638-0.801**);
-- positive realized gain over the clinical prediction in **7/8** cells;
-- selected-update coverage ranging from **0.264 to 0.969**;
-- selected-policy decision regret lower than always-updating in **4/8** cells.
+- positive realized gain over clinical in **7/8** cells;
+- decision regret lower than unconditional updating in **4/8** cells.
 
-Interpretation:
+Interpretation: patient-specific OCT benefit is learnable, while universal threshold superiority is not yet supported.
 
-> **Patient-specific benefit of accepting an OCT update is predictably non-random, but a single transferred threshold policy is not yet uniformly stable across centres/seeds.**
+### Stage109: Evidence Admission Intervention
 
-Accordingly, **Evidence Advantage is retained as the core mathematical object**, while threshold/risk-control calibration remains an active experimental component rather than a claimed guarantee.
+Held-out aligned-cohort test: **N=275, CIN2+=32**.
+
+- OCT advantage: **+0.02543**, 95% CI **[0.01037, 0.04162]**;
+- colposcopy advantage before OCT: **+0.03726**;
+- residual colposcopy advantage after OCT: **+0.02415**;
+- OCT-induced colposcopy redundancy: **+0.01311**, 95% CI **[0.00722, 0.01900]**;
+- mean reduction in colposcopy incremental advantage: **35.2%**;
+- held-out OCT-benefit AUC: **0.891**;
+- predicted OCT advantage vs residual colposcopy value: rho **-0.144**, 95% CI **[-0.267, -0.019]**;
+- predicted OCT advantage vs redundancy: rho **+0.379**, 95% CI **[0.256, 0.496]**.
+
+The residual colposcopy contribution remains positive. Therefore the repository does **not** claim that OCT replaces colposcopy.
 
 ## Repository layout
 
 ```text
-src/if_redesign/evidence_advantage.py   Evidence Advantage, benefit estimator, selective update
-scripts/evaluate_evidence_advantage.py  Held-out evaluation CLI
-configs/stage105_advantage_v1.json      Public Stage105 protocol
-results/STAGE105_AGGREGATE.json         Aggregate, non-patient-level Stage105 results
-docs/METHOD.md                          Current mathematical method
-docs/EXPERIMENT_STATUS.md               Stagewise experimental evidence
-tests/test_evidence_advantage.py        Mathematical and policy sanity tests
+src/if_redesign/evidence_advantage.py
+    Patient-Specific Evidence Advantage and selective updating
 
-src/if_redesign/sopi.py                 Earlier proper-score innovation analysis
-src/if_redesign/stagewise.py            Earlier prior-anchored updater
-src/if_redesign/*.py                    G2-PCGrad and legacy/reference components
+src/if_redesign/evidence_admission.py
+    Evidence Admission Intervention, residual value, matched replacement controls
+
+scripts/evaluate_evidence_advantage.py
+scripts/evaluate_evidence_admission.py
+    Data-agnostic held-out evaluation CLIs
+
+configs/stage105_advantage_v1.json
+configs/stage109_evidence_admission_v1.json
+    Frozen public protocols
+
+results/STAGE105_AGGREGATE.json
+results/STAGE109_EAI_AGGREGATE.json
+    Aggregate results only; no patient-level predictions
+
+docs/SCIENTIFIC_STORY.md
+docs/METHOD.md
+docs/EXPERIMENT_MAP.md
+docs/EXPERIMENT_STATUS.md
+    Scientific narrative, mathematical method and stagewise evidence
+
+tests/test_evidence_advantage.py
+tests/test_evidence_admission.py
+    Mathematical and implementation sanity tests
 ```
 
-## Minimal usage
+## Methodological validity controls
 
-```python
-import numpy as np
+Stage106/107 are retained as claim-boundary audits:
 
-from if_redesign import (
-    AdvantageSignEstimator,
-    evidence_advantage,
-    evaluate_selective_update,
-)
+- scalar objective repairs were not independently confirmed;
+- wrong-patient modality replacement must recompute the complete frozen policy;
+- reusing the recipient's original gate can create a spurious correspondence effect;
+- no finite-sample or universal new-centre safety guarantee is claimed.
 
-y_cal = np.array([1, 0, 1, 0])
-z0_cal = np.array([0.1, -0.2, -0.3, 0.4])
-z1_cal = np.array([0.8, -0.6, 0.2, -0.1])
+## Clinical positioning
 
-estimator = AdvantageSignEstimator().fit(y_cal, z0_cal, z1_cal)
-score = estimator.predict_score(z0_cal, z1_cal)
+The core IF paper positions OCT as **pre-colposcopy evidence**:
 
-advantage = evidence_advantage(y_cal, z0_cal, z1_cal)
-evaluation = evaluate_selective_update(
-    y_cal, z0_cal, z1_cal, score, threshold=0.0
-)
+```text
+Age / HPV / cytology -> OCT evidence assessment -> downstream colposcopy / biopsy
 ```
 
-## Clinical interpretation boundary
-
-The current paper studies whether **OCT should modify an existing clinical belief before colposcopy**. It does **not** claim that OCT replaces colposcopy. The incremental value of subsequent colposcopy is reserved for exploratory/future analysis.
+The core question is whether OCT should modify the existing clinical belief. Stage109 only explores whether accepting OCT changes the *residual predictive value* of subsequent colposcopy.
 
 ## Public-repository policy
 
-Private clinical data, patient identifiers, raw OCT images, model weights, private OOF prediction tables, and manuscript files are intentionally excluded. The public repository contains reusable methodology, protocol definitions, aggregate results, and tests only.
+Private clinical records, patient identifiers, raw OCT/colposcopy images, private prediction tables, model weights and manuscript files are intentionally excluded. The repository contains reusable methodology, protocol definitions, aggregate results and tests only.
 
-## Legacy reference
+## Legacy/reference components
 
-SOPI and the earlier G2-PCGrad phenotype-fusion implementation are retained as important precursor analyses and reference baselines. They are no longer the final primary methodological contribution.
+SOPI, G2-PCGrad and earlier fusion utilities remain in the repository as precursor analyses and reference baselines. They are not the final primary methodological contribution.
