@@ -1,0 +1,40 @@
+{
+  "name": "stage109_evidence_admission_intervention",
+  "role": "exploratory Discussion mechanism; core Evidence Advantage method unchanged",
+  "question": "Does accepting OCT reduce the residual predictive value of subsequent colposcopy?",
+  "inputs": [
+    "clinical",
+    "OCT",
+    "colposcopy"
+  ],
+  "endpoint": "pathology-referenced CIN2+",
+  "shared_states": [
+    "C",
+    "C+O",
+    "C+K",
+    "C+O+K"
+  ],
+  "effects": {
+    "A_O": "L(C)-L(C+O)",
+    "A_K": "L(C)-L(C+K)",
+    "A_K_given_O": "L(C+O)-L(C+O+K)",
+    "R_O_to_K": "A_K-A_K_given_O"
+  },
+  "model": "single shared additive evidence-admission predictor",
+  "development_protocol": {
+    "partition": "patient-disjoint train/validation/test",
+    "train": "fit shared admission model",
+    "validation": "select regularization and fit OCT-benefit predictor",
+    "test": "all reported mechanism effects",
+    "locked_confirmation_center": "Wuda/Wuhan not used"
+  },
+  "age_qc": "age outside 15-90 treated as missing; training median imputation",
+  "bootstrap": "centre-stratified patient bootstrap",
+  "correspondence_rule": "matched wrong-patient replacement must recompute the complete frozen prediction path",
+  "claim_boundary": [
+    "information-admission intervention only",
+    "no biological causal-effect claim",
+    "no claim that OCT replaces colposcopy",
+    "cross-centre transportability not guaranteed"
+  ]
+}
