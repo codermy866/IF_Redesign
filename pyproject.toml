@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "if-redesign"
-version = "0.4.0"
-description = "Patient-specific Evidence Advantage learning and selective multimodal evidence updating"
+version = "0.5.0"
+description = "Patient-specific Evidence Advantage and evidence-admission analysis for trustworthy multimodal updating"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
