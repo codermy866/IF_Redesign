@@ -1,0 +1,44 @@
+{
+  "name": "stage105_direct_evidence_advantage",
+  "task": "binary_classification",
+  "clinical_state": "z0",
+  "candidate_updated_state": "z1 = z0 + delta_oct",
+  "proper_score": "log",
+  "advantage_target": "A_i = loss(y_i, z0_i) - loss(y_i, z1_i)",
+  "benefit_target": "1[A_i > 0]",
+  "reference_estimator": {
+    "type": "strongly_regularized_low_dimensional_classifier",
+    "features": [
+      "clinical_logit",
+      "update_delta",
+      "abs_update_delta",
+      "clinical_probability",
+      "updated_probability",
+      "confidence_gain",
+      "abs_clinical_logit",
+      "abs_updated_logit"
+    ],
+    "polynomial_degree": 2,
+    "classifier": "LogisticRegressionCV",
+    "class_weight": "balanced"
+  },
+  "split_roles": {
+    "calibration": "fit the advantage/benefit estimator",
+    "selection": "select the update-acceptance threshold",
+    "validation": "final policy evaluation"
+  },
+  "primary_mechanism_metrics": [
+    "benefit_auc",
+    "fusion_coverage",
+    "decision_regret",
+    "always_update_regret",
+    "realized_gain_over_clinical",
+    "harm_rate_selected"
+  ],
+  "privacy": {
+    "raw_images": false,
+    "patient_identifiers": false,
+    "private_predictions": false,
+    "model_weights": false
+  }
+}
