@@ -1,0 +1,47 @@
+{
+  "method": "CFV-JEV",
+  "ordered_slots": {"OCT": 12, "colposcopy": 8},
+  "questions": 21,
+  "neutral_image": {"size": [224, 224], "rgb": [128, 128, 128]},
+  "representation": "LAP",
+  "laplace_grid": [0.5, 1.0, 2.0, 4.0, 8.0, 16.0],
+  "features": 26,
+  "residual": {
+    "intercept": false,
+    "mean_centering": false,
+    "source_training_std_floor": 0.005,
+    "standardized_feature_clip": 16.0,
+    "shrinkage_during_fit_and_prediction": 0.25,
+    "l2_candidates": [0.003, 0.03, 0.3],
+    "center_nonharm_penalty": true,
+    "center_nonharm_tolerance_NLL": 0.001,
+    "center_nonharm_penalty_coefficient": 1.0,
+    "selection": "mean source-center selection NLL"
+  },
+  "backbone_training": {
+    "steps": 512,
+    "policy": "colpo_focus",
+    "full_probability": 0.5,
+    "neutral_OCT_probability": 0.4,
+    "neutral_colposcopy_probability": 0.1,
+    "language_only_LoRA": true,
+    "LoRA_rank": 16,
+    "LoRA_alpha": 32,
+    "LoRA_dropout": 0.05,
+    "language_projection_names": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "checkpoint_selection_interval": 16,
+    "step_zero_selectable": false,
+    "source_only": true
+  },
+  "RAW_readout": {
+    "features": 33,
+    "parameters": 140,
+    "hidden_units": 4,
+    "paired_neutral_anchor_during_training": true,
+    "l2_candidates": [0.01, 0.1],
+    "rho_candidates": [0.5, 1.0],
+    "temperature_candidates": [1.0, 1.5],
+    "initialization_seed": 15217
+  },
+  "equal_capacity_controls": ["RAW", "POWER", "FOURIER", "DUP"]
+}

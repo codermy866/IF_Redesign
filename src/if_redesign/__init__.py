@@ -1,4 +1,6 @@
-"""Core components for stage-ordered multimodal information fusion."""
+"""CFV-JEV core and historical information-fusion reference components."""
+
+from .cfv_jev import ResidualHead, encode_evidence, extract_interventions, fit_residual
 
 from .fusion import FittedFusion, fit_nonnegative_fusion, masked_mean_site_probability
 from .labels import SiteSupervision, build_site_supervision, build_site_targets, parse_positive_sites
@@ -16,6 +18,10 @@ from .stagewise import PriorAnchoredUpdater, masked_mean_site_evidence
 from .training import G2PCGradTrainer, StepStatistics
 
 __all__ = [
+    "ResidualHead",
+    "encode_evidence",
+    "extract_interventions",
+    "fit_residual",
     "ConvNeXtFeatureTail",
     "FittedFusion",
     "G2PCGradTrainer",

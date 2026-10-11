@@ -1,51 +1,24 @@
-# Experimental Status
+# Implementation and evaluation status
 
-This document records the current aggregate experimental status without exposing patient-level data.
+The current public implementation is CFV-JEV. It contains the view-replacement
+interface, signed empirical evidence encodings, clinical-anchored residual
+fitting, and synthetic validation examples. It does not contain patient data,
+trained checkpoints, private predictions, or study result tables.
 
-## Completed confirmatory evaluation
+The full-image frozen-protocol evaluation is ongoing. Its remaining work
+includes matched residual and representation ablations, modality-content and
+training-budget controls, and held-out statistical comparisons. Publishing
+the implementation does not establish improved predictive performance.
 
-- Four source centres with strict patient-level leave-one-centre-out evaluation.
-- Qwen3-VL-2B-Instruct main MLLM experiments.
-- Phi-3.5-Vision-Instruct full-LoRA cross-family experiments.
-- Phi-3.5-Vision frozen-representation transfer experiments.
-- 144 total MLLM runs across confirmatory and transfer settings.
+Current evaluation uses an existing development cohort. A frozen protocol
+does not make that cohort an independent confirmation dataset. Independent
+confirmation remains pending.
 
-## Factorial stage-structure audit
+Earlier SOPI, prior-anchoring, and G2-PCGrad modules remain available for
+historical reference. Earlier experimental descriptions are not evidence
+that the latest CFV-JEV full-image evaluation is complete.
 
-A frozen-feature factorial comparison separates four structures:
-
-- flat fusion;
-- prior supplied as an ordinary feature;
-- direct prior anchoring;
-- prior anchoring with baseline-referenced contrast.
-
-The current result supports explicit prior anchoring as the transferable structural principle. Baseline subtraction is not required.
-
-## SOPI validation
-
-Completed analyses include:
-
-- Brier and log-score innovation;
-- within-centre patient permutation;
-- posterior-movement versus outcome-aligned innovation;
-- controlled nuisance perturbation;
-- finite-sample bias/coverage analysis;
-- stagewise additivity checks.
-
-A key falsification result is that within-centre permutation can increase posterior movement while making Brier/log innovation strongly negative. Therefore posterior movement is not a valid substitute for task-relevant information gain.
-
-## Boundary experiments
-
-The following hypotheses were tested and are not retained as the primary method:
-
-- local semantic recognition as a proxy for patient-level innovation;
-- hard clinical-subspace orthogonality;
-- worst-centre robustness as a proxy for information value;
-- exact committor transition value;
-- latent committor/innovation steering.
-
-These negative results are retained as falsification boundaries rather than additional method modules.
-
-## Public-repository policy
-
-The repository intentionally excludes patient identifiers, raw clinical data, OCT images, model weights, private OOF predictions, and manuscript files. Public code is restricted to the reusable method, validation utilities, and mathematical tests.
+For the reusable equations and implementation boundaries, see
+[METHOD.md](METHOD.md). Patient identifiers, clinical records, images, model
+weights, private experiment artifacts, and manuscript material are excluded
+from this release.
