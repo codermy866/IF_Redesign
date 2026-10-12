@@ -117,11 +117,15 @@ def images(item,task='diagnosis',site=None,phase=0,colpo_only=False):
     out=[Image.new('RGB',(224,224),(128,128,128)) for _ in range(20)]
     if task=='reread':
         if site is None:raise ValueError('Reread task needs a scanner position')
+        frames=[p for p in (item.get('oct_sites',{}).get(str(site)) or []) if p]
         indices=((0,3,6,9),(1,2,5,8))[int(phase)%2]
-        for j,index in enumerate(indices):out[j]=raw_oct(item['oct_sites'][str(site)][index])
+        for j,index in enumerate(indices):
+            if index<len(frames):out[j]=raw_oct(frames[index])
     else:
         if not colpo_only:
-            for site in range(1,13):out[site-1]=raw_oct(item['oct_sites'][str(site)][int(phase)%10])
-        for j,path in enumerate(item['colpo_paths'][:8]):
+            for site in range(1,13):
+                frames=[p for p in (item.get('oct_sites',{}).get(str(site)) or []) if p]
+                if frames:out[site-1]=raw_oct(frames[int(phase)%len(frames)])
+        for j,path in enumerate((item.get('colpo_paths') or [])[:8]):
             with Image.open(path) as im:out[12+j]=im.convert('RGB').resize((224,224),Image.Resampling.BILINEAR)
     return out

@@ -18,7 +18,8 @@ def extract_patient_features(model, item):
     q = float(z[1] - z[0])
     n = float(null['logits'][1] - null['logits'][0])
     response = np.zeros((12, 2))
-    mask = np.array([bool(item['oct_sites'].get(str(site))) for site in range(1, 13)])
+    mask = np.array([any(p for p in (item.get('oct_sites', {}).get(str(site)) or []) if p)
+                     for site in range(1, 13)])
     wn = float(weak_null['logits'][1] - weak_null['logits'][0])
     for site in range(1, 13):
         if not mask[site - 1]:
@@ -33,7 +34,7 @@ def extract_patient_features(model, item):
         hidden=full['hidden'].cpu().numpy() - null['hidden'],
         site=response, site_mask=mask,
         A=np.array(q - n), K=np.array(float(kv[1] - kv[0]) - n),
-        any_view=np.array(bool(mask.any() or item['colpo_paths'])),
+        any_view=np.array(bool(mask.any() or item.get('colpo_paths'))),
         q=np.array(q), q_null=np.array(n),
     )
 

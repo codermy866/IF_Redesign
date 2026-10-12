@@ -43,9 +43,13 @@ def test_source_overlap_and_outer_center_are_rejected():
         training.AdaptationPolicy(updates=2)
 
 
-def test_dual_task_label_routing_and_best_checkpoint_restore(tmp_path, monkeypatch):
+@pytest.mark.parametrize('variant', ['PATIENT_ONLY', 'DUAL_TASK'])
+def test_task_label_routing_and_best_checkpoint_restore(tmp_path, monkeypatch, variant):
     t = targets()
-    manifest = {key: {'key': key} for key in t}
+    if variant == 'PATIENT_ONLY':
+        t = {key: {k: value for k, value in row.items() if k in ('center', 'y')}
+             for key, row in t.items()}
+    manifest = {key: {'key': key, 'oct_sites': {str(s): ['synthetic'] for s in range(1, 13)}} for key in t}
     calls, supervised, snapshots = [], [], []
     def fake_images(item, task='diagnosis', site=None, phase=0):
         return SimpleNamespace(key=item['key'], task=task, site=site, phase=phase)
@@ -91,11 +95,34 @@ def test_dual_task_label_routing_and_best_checkpoint_restore(tmp_path, monkeypat
     result = training.train_source_adapter(
         model, manifest, t, [k for k in t if k.startswith('t')],
         [k for k in t if k.startswith('s')], outer_center='outer',
-        variant='DUAL_TASK', output_dir=tmp_path/'run',
+        variant=variant, output_dir=tmp_path/'run',
         policy=training.AdaptationPolicy(updates=4, checkpoints=(2, 4)))
-    assert [row.task for row in calls] == ['diagnosis', 'reread', 'diagnosis', 'reread']
+    expected_tasks = ['diagnosis']*4 if variant == 'PATIENT_ONLY' else ['diagnosis', 'reread', 'diagnosis', 'reread']
+    assert [row.task for row in calls] == expected_tasks
     assert all(row.key.startswith('t') for row in calls)
     assert result['selected_checkpoint']['step'] == 2
-    assert (result['diagnosis_updates'], result['reread_updates']) == (2, 2)
+    assert (result['diagnosis_updates'], result['reread_updates']) == ((4, 0) if variant == 'PATIENT_ONLY' else (2, 2))
     assert len(supervised) == 4 and not model.training
     assert float(model.parameters['w']) == pytest.approx(snapshots[0])
+
+
+def test_missing_positions_stay_neutral_and_partial_bags_do_not_index_past_end(tmp_path):
+    path = tmp_path/'one.png'
+    Image.new('RGB', (300, 200), (20, 30, 40)).save(path)
+    item = {'oct_sites': {'2': [str(path)], '3': None, '4': []}}
+    full = images(item, phase=9)
+    assert len(full) == 20 and full[1].getpixel((0, 0)) == (20, 30, 40)
+    assert all(v.getpixel((0, 0)) == (128, 128, 128) for j, v in enumerate(full) if j != 1)
+    missing = images(item, 'reread', site=1)
+    assert all(v.getpixel((0, 0)) == (128, 128, 128) for v in missing)
+    partial = images(item, 'reread', site=2)
+    assert partial[0].getpixel((0, 0)) == (20, 30, 40)
+    assert all(v.getpixel((0, 0)) == (128, 128, 128) for v in partial[1:])
+
+
+def test_patient_targets_are_usable_without_any_reread_metadata():
+    t = {key: {k: value for k, value in row.items() if k in ('center', 'y')}
+         for key, row in targets().items()}
+    training.validate_source_partitions(t, ['ta0', 'ta1'], ['sa0', 'sa1'], 'outer')
+    # Missing weak metadata is masked; actual dual-task sampling checks usable strata.
+    training.validate_source_partitions(t, ['ta0', 'ta1'], ['sa0', 'sa1'], 'outer', require_reread=True)

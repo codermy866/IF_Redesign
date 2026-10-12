@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "if-redesign"
-version = "0.5.0"
+version = "0.5.1"
 description = "Native Qwen 27B task adaptation and source-only multimodal risk readouts"
 requires-python = ">=3.10"
 dependencies = [

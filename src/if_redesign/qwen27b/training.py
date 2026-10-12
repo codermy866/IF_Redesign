@@ -31,7 +31,7 @@ class AdaptationPolicy:
             raise ValueError('Invalid training hyperparameters')
 
 
-def validate_source_partitions(targets, train_keys, selection_keys, outer_center):
+def validate_source_partitions(targets, train_keys, selection_keys, outer_center, *, require_reread=False):
     if not train_keys or not selection_keys:
         raise ValueError('Both source partitions are required')
     if (len(set(train_keys)) != len(train_keys) or
@@ -44,7 +44,8 @@ def validate_source_partitions(targets, train_keys, selection_keys, outer_center
             raise ValueError('Outer-center patient in source learning')
         if row['y'] not in (0, 1):
             raise ValueError('Patient target must be binary pathology')
-        if len(row['reread']) != 12 or any(v not in (-1, 0, 1) for v in row['reread']):
+        if (require_reread and key in train_keys and row.get('reread_valid', False) and
+                (len(row.get('reread', [])) != 12 or any(v not in (-1, 0, 1) for v in row['reread']))):
             raise ValueError('Expected twelve weak position labels; -1 is unresolved')
 
 
@@ -54,14 +55,15 @@ def train_source_adapter(model, manifest, targets, train_keys, selection_keys, *
     """Fit and restore a source-selected medical LoRA checkpoint.
 
     ``manifest[key]`` has only ``oct_sites`` and ``colpo_paths``. Labels live
-    separately in ``targets``. The original loop also requires both weak
-    classes in each training center for PATIENT_ONLY. Source selection chooses
+    separately in ``targets``. PATIENT_ONLY requires no weak labels. DUAL_TASK
+    checks both usable weak classes in each training center. Source selection chooses
     trained checkpoints; it is not an independent validation set. Output is
     local checkpoints and metric traces, never patient records.
     """
     if variant not in ('PATIENT_ONLY', 'DUAL_TASK'):
         raise ValueError('Adaptation variant must be PATIENT_ONLY or DUAL_TASK')
-    validate_source_partitions(targets, train_keys, selection_keys, outer_center)
+    validate_source_partitions(targets, train_keys, selection_keys, outer_center,
+                               require_reread=variant == 'DUAL_TASK')
     output_dir = Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError('Use an empty output directory to preserve previous runs')
@@ -77,13 +79,15 @@ def train_source_adapter(model, manifest, targets, train_keys, selection_keys, *
     for key in train_keys:
         target = targets[key]
         diagnosis.setdefault((target['center'], int(target['y'])), []).append(key)
-        if target['reread_valid']:
+        if variant == 'DUAL_TASK' and target.get('reread_valid', False):
             for site, label in enumerate(target['reread'], 1):
-                if label in (0, 1):
+                if label in (0, 1) and any(p for p in (manifest[key].get('oct_sites', {}).get(str(site)) or []) if p):
                     weak.setdefault((target['center'], int(label)), []).append((key, site))
     centers = sorted({g for g, label in diagnosis})
-    if any((c, label) not in diagnosis or (c, label) not in weak
-           for c in centers for label in (0, 1)):
+    if (any((c, label) not in diagnosis for c in centers for label in (0, 1)) or
+            (variant == 'DUAL_TASK' and any((c, label) not in weak
+                                          for c in centers for label in (0, 1)))):
+        model.enable_training(False)
         raise ValueError('Empty center/task class prevents balanced source sampling')
     opt = t.optim.AdamW(list(model.parameters.values()),
                        lr=policy.learning_rate, weight_decay=policy.weight_decay)

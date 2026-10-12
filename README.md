@@ -79,8 +79,10 @@ result = train_source_adapter(
 
 The image manifest maps caller-owned keys to `oct_sites` (string positions
 1-12, ten ordered raw frame paths each) and `colpo_paths` (up to eight).
-Targets are a separate mapping containing `center`, binary patient pathology
-`y`, twelve weak `reread` labels (`-1` unresolved), and `reread_valid`.
+Targets always contain `center` and binary patient pathology `y`.
+Patient-only training needs no weak-label metadata. Dual-task training also
+uses twelve weak `reread` labels (`-1` unresolved) and `reread_valid`; unusable
+weak targets and missing image positions are omitted from that task's sampler.
 Source training and source selection must use disjoint patients and exclude
 the held-out center. The source-selected checkpoint is restored on return.
 
@@ -90,6 +92,13 @@ trainable parameters. Native vision and base weights remain frozen. The
 FROZEN control uses the released model without medical updates. Patient-only
 and dual-task runs share 512 updates and 20 image slots; prompt token counts
 differ, so this is not an exact FLOPs match.
+
+Missing OCT positions retain neutral slots. Short frame lists cannot cause an
+indexing error: patient inference wraps the frame index over available paths,
+while a reread bag retains gray slots for unavailable selected indices.
+The reference data protocol still uses ten ordered frames per position.
+Audit image readability before building a manifest; invalid image files are
+not silently treated as valid observations.
 
 ## Fit the current patient readout
 
