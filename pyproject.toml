@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "if-redesign"
-version = "0.4.0"
-description = "CFV-JEV fixed-slot interventions and source-only evidence correction"
+version = "0.5.0"
+description = "Native Qwen 27B task adaptation and source-only multimodal risk readouts"
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
@@ -19,6 +19,11 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest>=8"]
 visual = ["Pillow>=10", "transformers>=4.57", "peft>=0.17"]
+jev27b = [
+  "Pillow>=10", "torch==2.6.0", "torchvision==0.21.0",
+  "transformers==5.19.0", "peft==0.21.2", "bitsandbytes==0.50.2",
+  "safetensors>=0.4",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

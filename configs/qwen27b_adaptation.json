@@ -1,0 +1,86 @@
+{
+  "upstream": "Qwen/Qwen3.8-27B",
+  "published_bundle": "autotrust/JEV-27B-VL",
+  "revision": "fee8c1d19d60216f8e9bcbb348141c0aa87ee2cc",
+  "training_updates": 512,
+  "checkpoint_steps": [
+    128,
+    256,
+    512
+  ],
+  "adapter_lr": 3e-05,
+  "proximal_weight": 0.01,
+  "adapter_walltime_hours": 12,
+  "trainable_parameters": 3014656,
+  "trainable_tensors": 16,
+  "trainable_scope": "released language layers48-63 attention q/v LoRA only",
+  "base_weights_frozen": true,
+  "vision_weights_frozen": true,
+  "variants": [
+    "FROZEN",
+    "PATIENT_ONLY",
+    "DUAL_TASK"
+  ],
+  "readout_geometries": [
+    "MOMENT",
+    "FOCAL",
+    "RELIABLE_FOCAL"
+  ],
+  "ranking_losses": [
+    "WITHIN",
+    "ALL_PAIRS"
+  ],
+  "readout_coefficients": 32,
+  "patient_semantic_dimensions": 16,
+  "site_geometry_dimensions": 14,
+  "additional_coordinates": [
+    "A",
+    "K"
+  ],
+  "lse_taus": [
+    0.5,
+    1.0,
+    2.0
+  ],
+  "reread_bags": [
+    [
+      0,
+      3,
+      6,
+      9
+    ],
+    [
+      1,
+      2,
+      5,
+      8
+    ]
+  ],
+  "diagnosis_inference_frame_index": 4,
+  "train_diagnosis_augmentation": "uniform raw within-position frame0..9",
+  "oct_transform": "Resize shortest edge256 with aspect retained; CenterCrop224; native Qwen processor",
+  "colpo_transform": "RGB Resize224",
+  "fixed_image_slots": 20,
+  "diagnosis_prompt_tokens": 1218,
+  "reread_prompt_tokens": 1234,
+  "compute_matching": "same trainable parameters, 512 updates, 20 image slots; prompt tokens differ and time is reported",
+  "sampling": "equal source centers and labels; dual task alternates diagnosis/reread, 256 updates each",
+  "readout_lambdas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0
+  ],
+  "rho": 0.25,
+  "readout_residual": "linear scaled; no hard safety bound",
+  "pair_block_max": 2048,
+  "pair_sampling_seed": 195,
+  "center_BCE_weight": 0.1,
+  "state_fit": "source train only; no inference mean subtraction; Q90 floors .05, coordinate std floor .005, clip16",
+  "adapter_selection": "source selection diagnosis AUROC; center AUROC then earlier step",
+  "readout_selection": "source selection pooled AUROC; NLL then stronger lambda",
+  "all_negative_results_retained": true,
+  "implementation_status": "research task-adaptation baseline; final selection and innovation evidence pending",
+  "head_temperature_after_medical_adaptation": "none; released binary bias is retained",
+  "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+}

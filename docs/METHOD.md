@@ -1,96 +1,106 @@
-# CFV-JEV implementation
+# Native Qwen task adaptation and patient readouts
 
-CFV-JEV combines a frozen patient predictor, view-replacement sensitivity,
-signed empirical evidence coordinates, and a clinical-anchored residual.
-The public package provides reusable computation; data loading, model weights,
-and the private experiment scheduler are not included.
+## Upstream and restricted adaptation
 
-## Fixed predictor and view replacement
+The caller supplies the pinned JEV 27B release and its native Qwen vision
+encoder. `NativeJEV` loads NF4 double quantization with BF16 computation,
+the released `adapter_vllm`, binary false/true verbalizers and released bias.
+It checks equality of every loaded adapter tensor. `MedicalQwen` permits only
+language q/v LoRA A/B tensors in layers 48-63 to receive gradients. Vision and
+base weights stay frozen.
 
-Let `c` be the clinical-reference logit and `h(X,c)` a fixed multimodal
-readout. Its baseline-referenced logit is
-
-```text
-b(X,c) = c + visual_scale * [h(X,c) - h(X_empty,c)]
-delta_j = b(X,c) - b(X_without_j,c)
-```
-
-`X_empty` contains only neutral images. `X_without_j` replaces view `j` with
-an RGB `(128,128,128)` image while keeping its slot, image dimensions, prompt,
-and question count. The reference layout has 12 OCT and 8 colposcopy slots;
-missing slots remain neutral and are masked from evidence aggregation.
-`extract_interventions` accepts the views, their validity mask, a clinical
-logit, and a frozen scorer. `visual_scale` carries the source-selected base
-coefficient divided by its temperature.
-
-The predictor stays frozen. Each replacement reruns the language prefix and
-patient readout. Deterministic frozen vision encodings may be cached after
-comparison with direct pixel execution; language caches cannot be reused
-across changed image inputs. Extraction accepts no outcome labels.
-
-## Evidence coordinates
-
-`encode_evidence` takes sensitivities and a matching validity mask. For each
-modality, it uses the valid-view signed mean and six coordinates for each
-sign. With `u_j = clip(delta_j,0,1)`, `v_j = clip(-delta_j,0,1)`, and
-`t = geomspace(0.5,16,6)`, these additional coordinates are
+The policy uses 512 AdamW updates (learning rate 3e-5, weight decay 0.01),
+gradient clipping at 1, and the following loss:
 
 ```text
-mean_valid(1 - exp(-t * u_j))
-mean_valid(1 - exp(-t * v_j))
+binary CE(logits + released bias, task target)
+  + 0.01 * mean_parameter_squared_distance_from_released_adapter
 ```
 
-This gives 13 coordinates per modality and 26 total. Aggregation uses the
-actual valid-view count; an empty modality contributes zeros. `RAW`,
-`FOURIER`, `POWER`, and `DUP` encodings provide the same output dimension.
-The Laplace coordinates are empirical transforms of model sensitivities,
-not a fitted Laplace probability distribution or calibrated uncertainty.
+The published general-purpose temperature is not applied to medically adapted
+logits. Patient-only training uses 512 pathology updates. Dual-task training
+alternates 256 pathology and 256 position-reread updates. Both sample source
+centers and classes uniformly. Checkpoints 128/256/512 are selected by source
+selection AUROC, then center AUROC and earlier step. Adapter and final patient
+readout are fitted sequentially; this is not joint end-to-end readout training.
 
-## Residual fitting and inference
+## Inputs and task semantics
 
-`fit_raw_readout` fits the 140-parameter baseline RAW patient readout from
-real and paired all-neutral source-training option logits. It standardizes
-33 coordinates (32 modality descriptors plus the global option-logit
-difference), applies four exact-GELU hidden units and their clinical-logit
-interaction, and trains `c+r(real,c)-r(neutral,c)` with center-equal BCE plus
-L2. Separate source-selection inputs choose L2 from `{0.01,0.1}`, base rho
-from `{0.5,1}`, and temperature from `{1,1.5}`. The returned
-`RawPatientReadout` reports unanchored `r`; intervention extraction performs
-the neutral subtraction and clinical anchoring exactly once.
+Prompts have 20 image slots: 12 OCT and 8 colposcopy. Neutral slots are RGB
+gray. Raw OCT frames retain aspect ratio with shorter edge 256 and center
+crop 224. Colposcopy images are resized to 224 square. Patient training samples
+one of ten frames per position; inference uses index 4. Position-reread uses
+four frames from one position in the first four slots, with other slots gray.
+Two fixed bags use indices [0,3,6,9] and [1,2,5,8]. File order is not verified
+temporal or anatomical geometry. Local targets apply to bags, not each frame.
 
-`fit_residual` takes separate source-training and source-selection arrays.
-Training standard deviations scale the coordinates with a floor of `0.005`.
-Scaled values are clipped to `[-16,16]`, without mean subtraction. A
-26-parameter linear residual has no intercept:
+The prompts distinguish structural imaging abnormality from patient CIN2+
+pathology. No pathological position target or cross-modality pixel alignment
+is assumed. Labels are separate from the image manifest and unavailable during
+inference feature extraction.
+
+## Current coordinates and prediction
+
+`extract_patient_features` computes the patient hidden vector minus its
+all-gray reference; patient decision contrast A; colposcopy-only contrast K;
+and two local-task contrasts per scanner position against a separate gray
+reread reference. The 32-coordinate readout contains 16 semantic coordinates,
+14 local coordinates and A/K.
+
+The semantic basis is learned from source-centered hidden vectors. Inference
+does not subtract their mean, so gray evidence stays zero. Local coordinates
+are signed mean, absolute mean, standard deviation, second/third/absolute-third
+moments, six positive/negative moment or normalized log-sum-exp coordinates,
+and positive/negative maxima. FOCAL temperatures are 0.5/1/2. RELIABLE_FOCAL
+divides the averaged local response by
+`1 + abs(response0-response1)/source_disagreement_Q90`. This discount is a
+candidate heuristic; disagreement may also reflect genuine heterogeneous
+findings and does not estimate calibrated uncertainty.
+
+Local Q90 scales have floor 0.05 and normalized values are clipped to [-8,8].
+Final source coordinate standard deviations have floor 0.005; coordinates
+are clipped to [-16,16]. The prediction is
 
 ```text
-z = b + 0.25 * dot(clip(x / std_train,-16,16), w)
-p = sigmoid(z)
+z = clinical_logit + 0.25 * dot(coordinates, w)
 ```
 
-`ResidualHead.predict_logit` applies this frozen transformation. Training and
-inference use the same `0.25` coefficient. The objective is centre-equal
-binary cross-entropy plus L2. The risk-regularized version adds the centre
-mean of `max(NLL(z)-NLL(b)-0.001,0)`. L2 is selected from `{0.003,0.03,0.3}`
-using source-selection centre-equal NLL. Held-out evaluation data do not
-enter fitting or selection.
+The head has 32 coefficients and no intercept. No visual evidence gives
+exact clinical fallback. This linear residual is unbounded: shrinkage does
+not provide a hard safety guarantee.
 
-With no valid visual evidence, `x=0`; the neutral baseline gives `b=c`, so
-the final logit is exactly `c`. The risk term is a soft penalty and does not
-guarantee that every centre improves. View replacement measures model
-decision sensitivity and does not establish a clinical causal effect.
+## Ranking and selection
 
-## Backbone provenance and historical modules
+WITHIN constructs positive/negative patient pairs inside each source center.
+ALL_PAIRS also includes ordered cross-center blocks. Each nonempty block has
+equal weight, with at most 2048 pairs and RNG seed 195. The objective is average
+pair-logistic loss plus 0.1 center-equal BCE plus 0.5 * lambda * squared weight
+norm. Lambda in {0.01,0.1,1,10} is selected by source-selection pooled AUROC,
+then lower NLL and stronger lambda.
 
-The full-image integration uses the external Visual Jev shared-context
-question interface with a Qwen3-VL backbone. See the
-[original paper](https://arxiv.org/abs/2609.25845) and
-[upstream source](https://github.com/guanxuyu-sv/Visual-Jev).
-Install and license the upstream software and checkpoints separately.
-`RawPatientReadout` and `VisualJEVAdapter` connect the public core to that
-interface; patient data loading remains the caller's responsibility.
+Three geometries and two losses yield six readouts for each of three upstream
+conditions: frozen released, patient-only adapted and dual-task adapted.
+Patient-level source splits and multi-fold selection/locking remain caller
+responsibilities. No held-out outcomes are accepted for fitting or selection.
 
-`stagewise.py` and `sopi.py` are historical stagewise-fusion and retrospective
-proper-score utilities. The G2-PCGrad modules and configuration are also
-retained as historical references. They are not required components of the
-current CFV-JEV residual.
+## Completed numerical references
+
+`InterventionJEV` retains released and bare-LM branches. Only the frozen
+released branch uses its published temperature. Cached vision replacement is
+checked against direct-pixel replacement with a direct fallback; language
+prefixes are recomputed. `stack_interventions(..., branch=0)` chooses the
+released branch and branch 1 the bare branch. Supply the same fixed input views
+used to derive a reference: raw-frame adaptation and historical montage
+preprocessing are different input protocols.
+
+`semantic_readout.py` contains completed 32-coordinate semantic/evidence
+families, including CENTERED32__ROBUST. It uses within-center ranking and mean
+or log-sum-exp center risk, with source-center CV for lambda.
+`evidence_readout.py` retains bounded evidence variants and scalar/PCA controls.
+PCA_LINEAR is an uncentered 18-coordinate linear residual with coefficient
+scale 1, distinct from the current 32-coordinate shrinkage-0.25 readout.
+The three numerical readout modules are unchanged from their experimental
+sources. Reproducing private predictions also requires the original partitions,
+clinical priors, preprocessing and fitted parameters; these are not released.
+
+Previous CFV-JEV equations remain in [historical documentation](HISTORICAL_CFV_JEV.md).

@@ -1,0 +1,30 @@
+{
+  "numerical_modules": [
+    {
+      "release_module": "src/if_redesign/qwen27b/evidence_readout.py",
+      "experimental_source": "191_medical_evidence_method_20261011/evidence_core.py",
+      "sha256": "15762559d45b00c9a1772ecfcd141abd2863dfa974d1df914f7eff042399d801",
+      "numerical_code_byte_identical": true
+    },
+    {
+      "release_module": "src/if_redesign/qwen27b/semantic_readout.py",
+      "experimental_source": "194_qwen_semantic_evidence_20261011/core.py",
+      "sha256": "53a32c1022068b5a3fd9c2657f0c0d2cba2c3858330ac9ea41d0bdb1026ae5f1",
+      "numerical_code_byte_identical": true
+    },
+    {
+      "release_module": "src/if_redesign/qwen27b/readout.py",
+      "experimental_source": "195_qwen_multigranularity_adaptation_20261012/core.py",
+      "sha256": "a5721162529d886941235fa96a9a762d35062230139f9f6be23f43b3bd88bad1",
+      "numerical_code_byte_identical": true
+    }
+  ],
+  "portable_interfaces": [
+    "qwen27b/native.py",
+    "qwen27b/adapter.py",
+    "qwen27b/interventions.py",
+    "qwen27b/features.py",
+    "qwen27b/training.py"
+  ],
+  "scope": "Core implementation only; no private orchestration or trained weights"
+}

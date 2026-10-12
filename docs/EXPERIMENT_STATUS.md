@@ -1,24 +1,24 @@
-# Implementation and evaluation status
+# Implementation status
 
-The current public implementation is CFV-JEV. It contains the view-replacement
-interface, signed empirical evidence encodings, clinical-anchored residual
-fitting, and synthetic validation examples. It does not contain patient data,
-trained checkpoints, private predictions, or study result tables.
+This release adds native Qwen 27B loading, restricted language-LoRA medical
+adaptation, raw-frame patient/position prompts, label-free features and six
+current 32-coordinate readouts. It also preserves completed semantic/evidence
+numerical reference readouts. CFV-JEV, SOPI and G2-PCGrad remain historical
+implementations.
 
-The full-image frozen-protocol evaluation is ongoing. Its remaining work
-includes matched residual and representation ablations, modality-content and
-training-budget controls, and held-out statistical comparisons. Publishing
-the implementation does not establish improved predictive performance.
+The medical adaptation campaign is ongoing. This is a task-adaptation and
+mechanism-comparison baseline. Final method selection, predictive benefit and
+a differentiated algorithmic contribution are not established by publishing
+this code. Synthetic checks verify computation, not clinical performance.
 
-Current evaluation uses an existing development cohort. A frozen protocol
-does not make that cohort an independent confirmation dataset. Independent
-confirmation remains pending.
+Evaluation reuses an existing development cohort. Source-only fitting and a
+frozen protocol do not make it an independent confirmation dataset.
+Independent confirmation remains pending.
 
-Earlier SOPI, prior-anchoring, and G2-PCGrad modules remain available for
-historical reference. Earlier experimental descriptions are not evidence
-that the latest CFV-JEV full-image evaluation is complete.
+The public wrapper exposes source data and paths as caller inputs. It does
+not include private initialization, manifests, clinical priors, model caches,
+multi-fold job scheduling or study reports. Obtain pretrained bundles under
+their upstream licenses. Patient records, images, fitted weights, predictions,
+result tables and unpublished manuscript materials remain outside this release.
 
-For the reusable equations and implementation boundaries, see
-[METHOD.md](METHOD.md). Patient identifiers, clinical records, images, model
-weights, private experiment artifacts, and manuscript material are excluded
-from this release.
+See [METHOD.md](METHOD.md) for equations and implementation boundaries.

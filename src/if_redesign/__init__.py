@@ -1,4 +1,4 @@
-"""CFV-JEV core and historical information-fusion reference components."""
+"""Native-Qwen adaptation and historical information-fusion reference components."""
 
 from .cfv_jev import ResidualHead, encode_evidence, extract_interventions, fit_residual
 

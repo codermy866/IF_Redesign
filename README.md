@@ -1,157 +1,130 @@
-# IF_Redesign: CFV-JEV
+# IF_Redesign: native Qwen 27B adaptation
 
-The latest method in this repository is **CFV-JEV**: a clinical-anchored
-patient predictor corrected using the signed effects of replacing individual
-image views with neutral images. The implementation includes the frozen
-backbone training policy, RAW patient-readout fitting, complete-input
-interventions, 26-dimensional evidence encodings, and source-only residual
-fitting. Synthetic examples run on a CPU.
+The latest code provides source-only medical task adaptation on the native
+Qwen multimodal backbone loaded from the pinned **autotrust/JEV-27B-VL**
+release. It includes raw OCT frame preparation, patient/position task training,
+label-free feature extraction, and clinical-anchored patient readouts.
 
-The full-image frozen-protocol evaluation is ongoing. This code release is
-an implementation reference; evidence for improved performance and independent
-confirmation remains pending. See [implementation status](docs/EXPERIMENT_STATUS.md)
-and [method details](docs/METHOD.md).
+This is an implementation release of an ongoing research baseline. It is not
+an assertion of a final method, demonstrated algorithmic novelty, or completed
+independent confirmation. See [method details](docs/METHOD.md) and
+[implementation status](docs/EXPERIMENT_STATUS.md).
 
-## Install and run the synthetic example
+## Install and run a CPU example
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[test]'
-python scripts/demo_cfv_jev.py
+python scripts/demo_qwen27b_readout.py
 python -m pytest -q
 ```
 
-The example generates synthetic views and labels in memory. It runs the
-intervention, source fitting, parameter serialization, and held-out prediction
-chain, including the exact zero-evidence clinical fallback. Its scores are
-demonstration output.
+The example creates synthetic features and labels in memory, fits all six
+current readouts on source data, selects using a separate source partition,
+and predicts on synthetic held-out observations. It checks exact clinical
+fallback when visual evidence is absent. Its metrics are demonstration output.
 
-## Current modules
+## Current code
 
 | Module | Function |
 | --- | --- |
-| `cfv_jev/backbone_training.py` | Source-only language-adapter training; frozen modality policy and budget controls |
-| `cfv_jev/visual_jev.py` | Fresh 20-slot / 21-question inference; portable 140-parameter RAW patient readout |
-| `cfv_jev/readout_training.py` | Source-center-balanced RAW readout fitting and source-selected update scale |
-| `cfv_jev/interventions.py` | Full-input neutral replacement for each valid view, with a fixed clinical logit |
-| `cfv_jev/evidence.py` | LAP, RAW, POWER, FOURIER, and DUP evidence encodings with identical 26-coordinate capacity |
-| `cfv_jev/training.py` | Bias-free residual fitting, source-only standard deviations, fixed shrinkage, soft center-risk penalty |
-| `configs/cfv_jev.json` | Current method defaults |
+| `qwen27b/native.py` | Local released-model loading, binary head and loaded-adapter equality checks |
+| `qwen27b/adapter.py` | Native vision features, 20 image slots, raw-frame transforms, restricted medical LoRA |
+| `qwen27b/training.py` | Source-center/class-balanced 512-update patient or alternating dual-task training |
+| `qwen27b/features.py` | Patient hidden contrast, local-task contrasts and colposcopy-only contrast |
+| `qwen27b/readout.py` | Current 32-coordinate moment/focal readouts and within/all-center pair losses |
+| `qwen27b/interventions.py` | Frozen released/bare model view replacements for reference readouts |
+| `qwen27b/semantic_readout.py` | Completed 32-coordinate semantic/evidence reference families |
+| `qwen27b/evidence_readout.py` | Completed evidence controls, including the 18-coordinate PCA linear reference |
+| `configs/qwen27b_adaptation.json` | Current adaptation and readout defaults |
 
-The shared numerical interface is:
+The three numerical readout modules preserve the experimental source code.
+Private paths, manifests and experiment scheduling are replaced by explicit
+caller inputs. Previously published CFV-JEV, SOPI and G2-PCGrad code remains
+available as historical reference.
 
-```python
-from if_redesign.cfv_jev import extract_interventions, fit_residual
+## Connect the actual 27B bundle
 
-# scorer(views, clinical_logit) returns the same frozen, unanchored readout.
-result = extract_interventions(
-    ordered_views, valid_mask, clinical_logit, scorer,
-    visual_scale=source_selected_scale,
-)
-evidence = result.evidence("LAP")  # 26 coordinates
+CUDA training uses the separately installed optional dependencies:
 
-# Each tuple is (evidence, base_logits, labels, source_center_ids).
-head = fit_residual(*source_training_arrays, *source_selection_arrays)
-final_logit = head.predict_logit([result.base_logit], evidence[None])[0]
+```bash
+python -m pip install -e '.[jev27b,test]'
 ```
 
-The ordered input has twelve OCT slots followed by eight colposcopy slots.
-Each replacement preserves the slot and recomputes the full language prefix.
-Missing slots are neutralized before scoring and excluded from aggregation.
-Evidence extraction accepts no pathology labels. Labels enter source training
-and source selection only; the caller must maintain patient-level separation
-and source provenance.
-
-## Connect a real Visual-JEV model
-
-Install the separately maintained [Visual Jev upstream implementation](https://github.com/guanxuyu-sv/Visual-Jev)
-and compatible model dependencies; optional dependencies here can be installed
-with `python -m pip install -e '.[visual]'`. The upstream shared-context
-question interface is described in its [original paper](https://arxiv.org/abs/2609.25845).
-Third-party source and checkpoint licenses apply to their respective materials.
-
-Supply a compatible Qwen3-VL execution model initialized with the selected
-language adapter, the source-fitted clinical prior, and fitted readout/head
-parameters. A bare pretrained backbone is insufficient to reproduce the
-trained method. A generic inference connection is:
+Obtain the separately licensed release from
+[ModelScope](https://modelscope.cn/models/autotrust/JEV-27B-VL).
+The recorded base identity is `Qwen/Qwen3.8-27B`; the loading release revision
+is `fee8c1d19d60216f8e9bcbb348141c0aa87ee2cc` and the base revision is
+`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. Supply a local bundle with the
+backbone/processor files, `adapter_vllm/adapter_config.json`,
+`adapter_vllm/adapter_model.safetensors`, `adapter_vllm/decision_head.json`,
+and `calibration.json`. No weights are bundled or automatically downloaded.
+The loader verifies released versus loaded adapter tensors; the caller must
+also obtain the backbone from the recorded revision.
 
 ```python
-from if_redesign.cfv_jev import RawPatientReadout, VisualJEVAdapter
+from if_redesign.qwen27b import MedicalQwen, train_source_adapter
 
-readout = RawPatientReadout.from_dict(readout_parameters)
-adapter = VisualJEVAdapter(selected_model)
-result = extract_interventions(
-    ordered_views, valid_mask, clinical_logit, adapter.scorer(readout),
-    visual_scale=readout.effective_scale,
+model = MedicalQwen("/path/to/licensed/jev27b-bundle", device=0)
+result = train_source_adapter(
+    model, image_manifest, separate_training_targets,
+    source_train_keys, source_selection_keys,
+    outer_center=heldout_center,
+    variant="DUAL_TASK",  # or PATIENT_ONLY
+    output_dir="outputs/source-adapter",
+    seed=17,
 )
-probability = head.predict_proba([result.base_logit], result.evidence()[None])[0]
 ```
 
-`RawPatientReadout` and `ResidualHead` provide JSON-compatible `to_dict` and
-`from_dict` methods. The RAW readout is fitted with its paired all-neutral
-reference; only the visual update is scaled, and the clinical logit is added
-once. The 26-parameter correction has no intercept or feature mean subtraction,
-and uses shrinkage `0.25` during both fitting and prediction.
+The image manifest maps caller-owned keys to `oct_sites` (string positions
+1-12, ten ordered raw frame paths each) and `colpo_paths` (up to eight).
+Targets are a separate mapping containing `center`, binary patient pathology
+`y`, twelve weak `reread` labels (`-1` unresolved), and `reread_valid`.
+Source training and source selection must use disjoint patients and exclude
+the held-out center. The source-selected checkpoint is restored on return.
 
-Fit the RAW readout using separate source-training and source-selection
-tuples, each containing `(option_logits, neutral_option_logits, clinical_logits,
-labels, center_ids)`:
+Only released language attention q/v LoRA tensors in layers 48-63 are
+continued; the pinned architecture has 16 eligible tensors and 3,014,656
+trainable parameters. Native vision and base weights remain frozen. The
+FROZEN control uses the released model without medical updates. Patient-only
+and dual-task runs share 512 updates and 20 image slots; prompt token counts
+differ, so this is not an exact FLOPs match.
+
+## Fit the current patient readout
 
 ```python
-from if_redesign.cfv_jev import fit_raw_readout
+from if_redesign.qwen27b import extract_patient_features, stack_features
+from if_redesign.qwen27b import readout
 
-fitted = fit_raw_readout(*source_raw_training_arrays, *source_raw_selection_arrays)
-readout = fitted.readout
-```
-
-Option logits have shape `(N, 21, 2)`. Neutral logits may be per patient or
-a shared `(21, 2)` array when neutral inputs are identical. Scaling parameters
-are fitted on source training only; source selection chooses L2 and the
-visual update scale. Evaluation data enter neither stage.
-
-For source-only backbone training, `BackboneTrainingPolicy` and
-`train_source_backbone` implement the frozen 512-step schedule. They preserve
-all twenty slots while sampling 50% full input, 40% neutral OCT, and 10% neutral
-colposcopy. Patient-answer supervision uses whole-vocabulary cross entropy;
-view questions receive no patient pathology labels. The vision encoder stays
-frozen and source-selection NLL chooses among trained checkpoints every sixteen
-steps. Step zero remains a diagnostic reference. Caller-supplied model loading
-and source data assembly remain environment-specific.
-
-```python
-from if_redesign.cfv_jev import (
-    BackboneTrainingPolicy, configure_language_lora, train_source_backbone,
+train_rows = [extract_patient_features(model, image_manifest[k])
+              for k in source_train_keys]
+selection_rows = [extract_patient_features(model, image_manifest[k])
+                  for k in source_selection_keys]
+train = stack_features(train_rows, source_train_clinical_logits)
+selection = stack_features(selection_rows, source_selection_clinical_logits)
+state, heads, scores = readout.train_select(
+    train, source_train_y, source_train_centers,
+    selection, source_selection_y, source_selection_centers,
 )
 
-policy = BackboneTrainingPolicy(seed=17)
-model.backbone = configure_language_lora(
-    model.backbone, policy, released_adapter=upstream_answer_adapter_path,
-)
-# Each source item is TrainingPatient(key, twenty_views, binary_label).
-training_result = train_source_backbone(model, source_train, source_selection, policy=policy)
+# Freeze the state/head before extracting/evaluating held-out data.
+head = heads[source_selected_family]
+heldout = stack_features(heldout_rows, heldout_clinical_logits)
+heldout_logits = readout.predict(head, heldout, state)
 ```
 
-`configure_language_lora` also supports fresh initialization for explicitly
-different training runs. The reference method initializes from the upstream
-answer adapter before its source training.
+Feature extraction receives image paths, not outcome labels. Clinical logits
+must come from a separately source-fitted clinical prior. Projection bases and
+scales use source training only. Source selection chooses regularization;
+held-out outcomes enter neither operation. Cache features separately for each
+adapter and preprocessing identity. Patient loading, cache management and
+multi-fold scheduling remain caller responsibilities.
 
-For matched content/budget controls, `BackboneTrainingPolicy(modality="O")`
-or `modality="K"` permanently neutralizes the other modality while retaining
-the same augmentation and budget. These controls can include all-neutral
-training inputs; their counts are reported. LAP without the soft risk penalty
-is obtained through `fit_residual(..., risk_penalty=False)`, and equal-capacity
-representation controls through `encode_evidence(..., representation=...)`.
+Local reread labels describe imaging phenotype, not frame pathology or CIN2+
+localization. Repeat-bag disagreement is an experimental discount, not a
+calibrated uncertainty estimate. Clinical anchoring has exact zero-evidence
+fallback but no hard safety bound. No clinical causal interpretation is claimed.
 
-## Scope and earlier components
-
-This tree contains core code, configuration, documentation, and synthetic
-tests. Patient records, images, fitted weights, experiment outputs, and
-manuscript materials remain outside the release. The empirical Laplace
-coordinates summarize predictor sensitivity; they do not establish a
-clinical causal effect or a calibrated uncertainty distribution. The
-center-risk term is a soft penalty, without an every-center safety guarantee.
-
-Existing SOPI, stagewise prior-anchoring, and G2-PCGrad modules remain as
-historical reference implementations. They are separate from the current
-CFV-JEV computation chain.
+Patient records, images, fitted weights, predictions, study results,
+manuscripts and figures remain outside this release.
