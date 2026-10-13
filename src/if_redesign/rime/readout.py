@@ -14,7 +14,9 @@ def coordinates(h,kind='laplace'):
         for degree in range(2,8):
             p=((2*degree-1)*h*p1-(degree-1)*p0)/degree
             zero=-(degree-1)*zero0/degree
-            terms.append(p-zero);p0,p1=p1,p;zero0,zero1=zero1,zero
+            terms.append(p-zero)
+            p0,p1=p1,p
+            zero0,zero1=zero1,zero
         return torch.stack(terms,-1).flatten(-2)
     if kind=='lse':
         # Singleton responses for a common source raw-frame scale. Actual
