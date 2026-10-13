@@ -34,7 +34,7 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
     # Phase 1 fits the patient residual against geometry-only/kernel or uniform
     # attention; Phase 2 releases conditional scores and site attention.
     # Zero reproduces the legacy joint-training regime exactly.
-    selector=(head.a,head.U,head.V,head.g)
+    selector=tuple(p for p in (head.a,head.U,head.V,head.g) if p.requires_grad)
     optimizer=torch.optim.Adam([p for p in head.parameters() if p.requires_grad],lr=.003)
     if selector_warmup_epochs:
         for p in selector:p.requires_grad_(False)
