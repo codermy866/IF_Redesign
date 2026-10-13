@@ -56,12 +56,14 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
             score=(float(roc_auc_score(vy,zz)),-float(np.mean(np.logaddexp(0,zz)-vy*zz)),-epoch)
             curve.append(dict(epoch=epoch,AUROC=score[0],NLL=-score[1]))
             if best is None or score>best[0]:best=(score,copy.deepcopy(head.state_dict()),epoch);bad=0
-            else:bad+=1
-            if bad>=patience:break
+            elif epoch > selector_warmup_epochs:bad+=1
+            # Do not terminate before the source-defined selector phase has run.
+            if epoch > selector_warmup_epochs and bad>=patience:break
         elif fixed_epochs is not None and epoch==fixed_epochs:
             best=(None,copy.deepcopy(head.state_dict()),epoch)
     head.load_state_dict(best[1]);head.eval()
+    for p in selector:p.requires_grad_(True)
     return head,dict(best_epoch=best[2],epochs_run=epoch,curve=curve,
-        parameters=sum(p.numel() for p in head.parameters() if p.requires_grad),allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
+        parameters=sum(p.numel() for group in optimizer.param_groups for p in group['params']),allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
         pooling=pooling,readout=readout,source_only=True,
         selector_warmup_epochs=selector_warmup_epochs)
