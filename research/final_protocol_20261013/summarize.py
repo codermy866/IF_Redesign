@@ -18,12 +18,15 @@ def metrics(y,p,thresholds):
 def main(phase):
     cfg=config();rows=load_patients();y=np.array([r['y'] for r in rows]);g=np.array([r['center'] for r in rows])
     names=CORE.copy()
-    if phase in ['B1','B2','B5']:names+=['B1_SOURCE_SELECTED_WARMUP']
-    if phase in ['B2','B5']:names+=['B2_GEOMETRY','B2_LOCAL','B2_LOCAL_CAPACITY_MATCHED']
-    if phase=='B5':names+=['B5_VALUE_AUXILIARY','B5_SHUFFLED_AUXILIARY','B5_POSTHOC_ONLY']
+    centres=sorted(set(g))
+    if all((HERE/'private/head_runs'/c/'B1_SOURCE_SELECTED_WARMUP.npz').exists() for c in centres):names+=['B1_SOURCE_SELECTED_WARMUP']
+    if phase in ['B1','B2','B5','confirmation'] and all((HERE/'private/head_runs'/c/'B2_GEOMETRY.npz').exists() for c in centres):names+=['B2_GEOMETRY','B2_LOCAL','B2_LOCAL_CAPACITY_MATCHED','B2_CONTEXT_SHUFFLED']
+    if phase in ['controls','B1','B2','B5','confirmation'] and all((HERE/'private/head_runs'/c/'MEASURE_LSE56.npz').exists() for c in centres):names+=['ATTENTION_DIVERSITY_LAPLACE','MEASURE_LSE56']
+    if phase=='B5':names+=['B5_VALUE_AUXILIARY','B5_SHUFFLED_AUXILIARY','B5_STRATIFIED_SHUFFLED','B5_PATIENT_AUXILIARY','B5_POSTHOC_ONLY']
+    raw_names=['ORIGINAL_RAW_ATTENTION_MOMENT','ORIGINAL_RAW_ATTENTION_LAPLACE'] if all((runtime.RECOVERY/'private/head_runs'/c/'B_ATTENTION_LAPLACE.npz').exists() for c in centres) else []
     folds=joblib.load(runtime.BASE/'196_controlled_cfv_jev_20261012/five_center/private/SOURCE_FROZEN_MODELS.joblib')
     baseline_names=['NO_JEV_THREE_MODAL_LINEAR','FROZEN_JEV_SEMANTIC_LINEAR_PROBE'] if (HERE/'BASELINES_COMPLETE.json').exists() else []
-    ps={n:np.full((3,len(y)),np.nan) for n in names+['ANCHOR','CLINICAL']+baseline_names};ths={n:np.full(len(y),np.nan) for n in ps}
+    ps={n:np.full((3,len(y)),np.nan) for n in names+['ANCHOR','CLINICAL']+baseline_names+raw_names};ths={n:np.full(len(y),np.nan) for n in ps}
     for outer in sorted(set(g)):
         tr=np.flatnonzero(g!=outer);te=np.flatnonzero(g==outer)
         part=joblib.load(HERE/'private/fold_features'/outer/'outer.joblib')
@@ -31,10 +34,11 @@ def main(phase):
             z=part['anchor']['anchor'][te] if name=='ANCHOR' else folds[outer]['clinical'][te]
             source=folds[outer]['source_oof']['SEMANTIC_PCA26' if name=='ANCHOR' else 'CLINICAL']
             ps[name][:,te]=expit(z);ths[name][te]=np.quantile(source[y[tr]==1],.05,method='lower')
-        for name in names+baseline_names:
+        for name in names+baseline_names+raw_names:
             folder='baselines' if name in baseline_names else 'head_runs'
-            filename='D_RIME_LAPLACE' if name=='B5_POSTHOC_ONLY' else name
-            with np.load(HERE/'private'/folder/outer/(filename+'.npz')) as f:
+            filename={'B5_POSTHOC_ONLY':'D_RIME_LAPLACE','ORIGINAL_RAW_ATTENTION_MOMENT':'A_ATTENTION_MOMENT','ORIGINAL_RAW_ATTENTION_LAPLACE':'B_ATTENTION_LAPLACE'}.get(name,name)
+            base=runtime.RECOVERY if name in raw_names else HERE
+            with np.load(base/'private'/folder/outer/(filename+'.npz')) as f:
                 assert np.array_equal(f['test'],te) and np.array_equal(f['source_indices'],tr)
                 ps[name][:,te]=expit(f['seed_logits'])
                 source=logit(np.clip(expit(f['source_seed_logits']).mean(0),1e-12,1-1e-12))
@@ -50,9 +54,15 @@ def main(phase):
         'A4_MINUS_ANCHOR':{'D_RIME_LAPLACE':1,'ANCHOR':-1}}
     if 'B1_SOURCE_SELECTED_WARMUP' in names:contrasts['B1_MINUS_JOINT']={'B1_SOURCE_SELECTED_WARMUP':1,'D_RIME_LAPLACE':-1}
     if 'B2_GEOMETRY' in names:
-        for n in ['B2_GEOMETRY','B2_LOCAL','B2_LOCAL_CAPACITY_MATCHED']:contrasts['CONDITIONAL_MINUS_'+n]={'D_RIME_LAPLACE':1,n:-1}
+        for n in ['B2_GEOMETRY','B2_LOCAL','B2_LOCAL_CAPACITY_MATCHED','B2_CONTEXT_SHUFFLED']:contrasts['CONDITIONAL_MINUS_'+n]={'D_RIME_LAPLACE':1,n:-1}
+    if raw_names:
+        contrasts['DEDUP_MINUS_RAW_ATTENTION_MOMENT']={'A_ATTENTION_MOMENT':1,'ORIGINAL_RAW_ATTENTION_MOMENT':-1}
+        contrasts['DEDUP_MINUS_RAW_ATTENTION_LAPLACE']={'B_ATTENTION_LAPLACE':1,'ORIGINAL_RAW_ATTENTION_LAPLACE':-1}
+    if 'MEASURE_LSE56' in names:
+        contrasts['A4_MINUS_ATTENTION_DIVERSITY']={'D_RIME_LAPLACE':1,'ATTENTION_DIVERSITY_LAPLACE':-1}
+        contrasts['A4_MINUS_LSE56']={'D_RIME_LAPLACE':1,'MEASURE_LSE56':-1}
     if phase=='B5':
-        for n in ['D_RIME_LAPLACE','B5_SHUFFLED_AUXILIARY','ANCHOR']:contrasts['B5_VALUE_MINUS_'+n]={'B5_VALUE_AUXILIARY':1,n:-1}
+        for n in ['D_RIME_LAPLACE','B5_SHUFFLED_AUXILIARY','B5_STRATIFIED_SHUFFLED','B5_PATIENT_AUXILIARY','ANCHOR']:contrasts['B5_VALUE_MINUS_'+n]={'B5_VALUE_AUXILIARY':1,n:-1}
     strata=[np.flatnonzero((g==c)&(y==v)) for c in sorted(set(g)) for v in [0,1]]
     rng=np.random.default_rng(cfg['bootstrap_seed']);boot={n:{m:[] for m in point[n]} for n in probabilities}
     cb={(n,c):[] for n in probabilities for c in sorted(set(g))}
@@ -90,7 +100,7 @@ def main(phase):
         cds={c:sum(v*roc_auc_score(y[g==c],probabilities[n][g==c]) for n,v in coef.items()) for c in sorted(set(g))}
         paired.append(dict(contrast=name,AUROC_delta=observed,CI_low=lo,CI_high=hi,Bonferroni_CI_low=al,Bonferroni_CI_high=ah,
             positive_centers=sum(v>0 for v in cds.values()),**{c+'_delta':v for c,v in cds.items()},support=bool(al>0 and sum(v>0 for v in cds.values())>=4),
-            multiplicity_family='16 planned new development contrasts, including 2 prior CV1 comparisons; original Stage197 primary family unchanged',family_size=cfg['new_comparison_family_size']))
+            multiplicity_family='23 planned new development contrasts, including 2 prior CV1 comparisons; original Stage197 primary family unchanged',family_size=cfg['new_comparison_family_size']))
     pd.DataFrame(table).to_csv(HERE/f'TABLE_{phase.upper()}_MAIN.csv',index=False)
     pd.DataFrame(paired).to_csv(HERE/f'TABLE_{phase.upper()}_CONTRASTS.csv',index=False)
     pd.DataFrame(centers).to_csv(HERE/f'TABLE_{phase.upper()}_CENTERS.csv',index=False)
@@ -105,4 +115,4 @@ def main(phase):
     (HERE/(phase.upper()+'_CONTRIBUTION_REVIEW.md')).write_text('# Actual contribution evidence\n\n'+pd.DataFrame(paired).to_csv(index=False)+'\nAll three seeds retained. Bootstrap conditions on models and historical development; only five centres. No independent cohort.\n')
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['core','B1','B2','B5'],required=True);main(p.parse_args().phase)
+    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['core','controls','B1','B2','B5','confirmation'],required=True);main(p.parse_args().phase)

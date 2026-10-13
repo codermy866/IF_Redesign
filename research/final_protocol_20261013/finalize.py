@@ -6,7 +6,7 @@ import numpy as np,pandas as pd,torch
 
 def main():
     tables={}
-    for phase in ['CORE','B1','B2','B5']:
+    for phase in ['BASELINES','CORE','B1','B2','CONTROLS','CONFIRMATION','B5']:
         path=HERE/f'TABLE_{phase}_MAIN.csv'
         if path.exists():tables[phase]=pd.read_csv(path)
     negatives=[];evidence=[]
@@ -65,7 +65,7 @@ def main():
     claim['final_method_frozen']=False
     save(HERE/'CLAIM_LEDGER.json',claim)
     if tables:
-        text='\\section{Experiments}\nWe evaluated patient-level CIN2+ prediction in a repeatedly used five-centre development cohort (984 patients, 303 CIN2+). All projections, clinical priors, bandwidths, coordinate scales and selections used source patients only. Five outer centres, source-centre inner validation, and seeds 17, 29 and 43 were retained. This is cross-centre internal development, not independent confirmation. Paired bootstrap used 3000 centre-by-label patient resamples and a fixed new-development comparison family of 16.\\par\n'
+        text='\\section{Experiments}\nWe evaluated patient-level CIN2+ prediction in a repeatedly used five-centre development cohort (984 patients, 303 CIN2+). All projections, clinical priors, bandwidths, coordinate scales and selections used source patients only. Five outer centres, source-centre inner validation, and seeds 17, 29 and 43 were retained. This is cross-centre internal development, not independent confirmation. Paired bootstrap used 3000 centre-by-label patient resamples and a fixed new-development comparison family of '+str(config()['new_comparison_family_size'])+'.\\par\n'
         for phase,frame in tables.items():
             text+='\\subsection{'+phase+' actual held-centre results}\n'
             for row in frame.to_dict('records'):
@@ -73,7 +73,14 @@ def main():
                 text+=f"{method}: AUROC {row['AUROC']:.4f}, AUPRC {row['AUPRC']:.4f}, NLL {row['NLL']:.4f}, Brier {row['Brier']:.4f}.\\\\\n"
         text+='\\par Confidence intervals, centre-specific results, all seeds, source-selected thresholds, CIN3+ denominators and computational costs accompany the machine-readable tables. Historical exploration and unresolved source-label adjudication constrain generalization claims.\n'
         (HERE/'Experiments.tex').write_text(text)
+        (HERE/'EXPERIMENTS.tex').write_text(text)
+    gate_files=['B2_SOURCE_ADMISSION_GATE.json','B5_SOURCE_ADMISSION_GATE.json','B5_STOP_REASON.json']
+    gates={name:json.loads((HERE/name).read_text()) for name in gate_files if (HERE/name).exists()}
+    save(HERE/'REVIEWER_EVIDENCE_STATUS.json',dict(actual_result_phases=list(tables),source_gates=gates,
+        unsupported_or_negative_comparisons=negatives,value_learning_diagnostics=value_diagnostics,
+        core_algorithm_necessity_confirmed=False,independent_confirmation=False))
     save(HERE/'DELIVERY_STATUS.json',dict(actual_result_phases=list(tables),pending_phases=[p for p in ['CORE','B1','B2','B5'] if p not in tables],
-        independent_confirmation='UNAVAILABLE',submission_not_performed=True,git_push_not_performed=True,time=time.time()))
+        independent_confirmation='UNAVAILABLE',submission_not_performed=True,
+        git_push_not_performed=not (HERE/'GIT_PUSH_RECEIPT.json').exists(),time=time.time()))
 
 if __name__=='__main__':main()

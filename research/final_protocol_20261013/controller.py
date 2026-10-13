@@ -9,7 +9,7 @@ OWNED=[]
 
 def state(phase,**fields):
     save(HERE/'STATE.json',dict(state=phase,pid=os.getpid(),time=time.time(),completed=False,**fields))
-    (HERE/'RUN_STATE.md').write_text('# Current execution\n\n'+phase+'\n\n'+json.dumps(fields,indent=2)+'\n\nAll clinical tables are pending until produced from all five held-centre predictions. Original 168h deadline is unchanged.\n')
+    (HERE/'RUN_STATE.md').write_text('# Current execution\n\n'+phase+'\n\n'+json.dumps(fields,indent=2)+'\n\nNew core/scorer/auxiliary tables are pending until produced from all five held-centre predictions. Completed baseline results remain in TABLE_BASELINES_MAIN.csv. Original 168h deadline is unchanged.\n')
 
 def alive(pid,needle):
     path=Path('/proc')/str(pid)/'cmdline'
@@ -75,7 +75,8 @@ def attach_cache():
     save(HERE/'SHARED_CACHE_RECEIPT.json',dict(original_feature_manifest_sha256=sha(ORIGINAL/'FEATURE_MANIFEST.json'),no_backbone_reinference=True))
 
 def heads(phase,gpu=True):
-    todo=[c for c in ['enshi','jingzhou','shiyan','wuhan','xiangyang'] if not (HERE/'private/head_runs'/c/(('COMPLETE' if phase=='core' else phase+'_COMPLETE')+'.json')).exists()]
+    completion={'core':'COMPLETE','controls':'CONTROLS_COMPLETE'}.get(phase,phase+'_COMPLETE')
+    todo=[c for c in ['enshi','jingzhou','shiyan','wuhan','xiangyang'] if not (HERE/'private/head_runs'/c/(completion+'.json')).exists()]
     active={}
     while todo or active:
         verify()
@@ -102,7 +103,7 @@ def resume_original_protocol():
         source=HERE/'private/fold_features'/outer;target=RECOVERY/'private/fold_features'/outer
         if not target.exists():target.parent.mkdir(parents=True,exist_ok=True);target.symlink_to(source,target_is_directory=True)
         source=HERE/'private/head_runs'/outer;target=RECOVERY/'private/head_runs'/outer;target.mkdir(parents=True,exist_ok=True)
-        for method in config()['core_methods']:
+        for method in config()['original_reusable_methods']:
             for path in source.glob(method+'*'):
                 if path.is_file() and not (target/path.name).exists():os.link(path,target/path.name)
     save(HERE/'ORIGINAL_RECOVERY_REUSE_RECEIPT.json',dict(core_joint_exact_parity=True,features_shared_read_only=True,new_warmup_and_scores_not_reused_as_original=True))
@@ -120,12 +121,26 @@ def main():
     recovery=resume_original_protocol()
     run(HERE/'robustness.py')
     # Preserve the original campaign's GPU priority; small controls use CPU.
-    heads('B1',gpu=False);heads('B2',gpu=False)
+    heads('B2',gpu=False);heads('B1',gpu=False);heads('controls',gpu=False)
     state('WAIT_ORIGINAL_GPU_TASKS_BEFORE_B5_FULL_NATIVE_RECOMPUTATION',original_recovery_pid=recovery.pid)
     while recovery.poll() is None:verify();time.sleep(20)
     if recovery.returncode:
         save(HERE/'ORIGINAL_RECOVERY_FAILURE.json',dict(returncode=recovery.returncode,original_outputs_preserved=True))
-    run(HERE/'run_b5.py')
+    run(HERE/'summarize.py',['--phase','confirmation'])
+    source_admission=[]
+    for control in ['B2_GEOMETRY','B2_LOCAL_CAPACITY_MATCHED','B2_CONTEXT_SHUFFLED']:
+        deltas=[]
+        for outer in ['enshi','jingzhou','shiyan','wuhan','xiangyang']:
+            folder=HERE/'private/head_runs'/outer
+            full=json.loads((folder/'D_RIME_LAPLACE_SOURCE_SELECTION_LOCK.json').read_text())
+            other=json.loads((folder/(control+'_SOURCE_SELECTION_LOCK.json')).read_text())
+            deltas.append(full['source_AUROC']-other['source_AUROC'])
+        source_admission.append(dict(control=control,source_deltas=deltas,mean_delta=sum(deltas)/5,positive_folds=sum(d>0 for d in deltas),supported=bool(sum(deltas)>0 and sum(d>0 for d in deltas)>=3)))
+    admitted=all(r['supported'] for r in source_admission)
+    save(HERE/'B2_SOURCE_ADMISSION_GATE.json',dict(state='PASS' if admitted else 'PATIENT_CONDITIONING_UNSUPPORTED',comparisons=source_admission,outer_metrics_used=False))
+    if admitted:run(HERE/'run_b5.py')
+    else:save(HERE/'B5_STOP_REASON.json',dict(state='B2_SOURCE_CONDITIONING_GATE_NOT_SUPPORTED',action='retain original native verification, do not add CFV training to hide unsupported conditioning',new_B5_outer_results=False))
+    run(HERE/'head_diagnostics.py')
     run(HERE/'finalize.py')
     save(HERE/'STATE.json',dict(state='FINAL_PROTOCOL_FINISHED_WITH_EXPLICIT_GATES',pid=os.getpid(),completed=True,independent_confirmation=False))
 

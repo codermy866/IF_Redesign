@@ -1,5 +1,5 @@
 """Patient-level centre-balanced training; outer test labels never enter fit."""
-import copy
+import copy,time
 import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
@@ -18,7 +18,8 @@ def loss(z,y,groups,model,lam):
 
 def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
                max_epochs=300,patience=30,fixed_epochs=None,caprmil_factory=None,
-               selector_warmup_epochs=0):
+               selector_warmup_epochs=0,attention_diversity_weight=0.):
+    fit_started=time.monotonic()
     torch.manual_seed(seed);np.random.seed(seed)
     head=RIMEHead(train['b'].shape[-1],tau,pooling,readout).to(device=train['h'].device,dtype=train['h'].dtype)
     if pooling=='pca_refit' and 'initial_semantic_weight' in train:
@@ -42,19 +43,28 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
     gg=groups[indices];best=None;bad=0;curve=[]
     # The beta=0 anchor is a real selection candidate, including epoch zero.
     for epoch in range((fixed_epochs if fixed_epochs is not None else max_epochs)+1):
+        train_objective=None
         if epoch and selector_warmup_epochs and epoch==selector_warmup_epochs+1:
             for p in selector:p.requires_grad_(True)
         if epoch:
-            head.train();optimizer.zero_grad();z=head(**{k:v for k,v in train.items() if k!='indices'})
+            head.train();optimizer.zero_grad()
+            inputs={k:v for k,v in train.items() if k!='indices'}
+            if attention_diversity_weight:z,detail=head(**inputs,return_details=True)
+            else:z=head(**inputs)
             objective=loss(z,yy,gg,head,lam)
+            if attention_diversity_weight:
+                w=detail['w'];mask=train['valid'].any(-1)
+                energy=.5*(w[...,None,:]@train['k']@w[...,None]).squeeze(-1).squeeze(-1)
+                objective=objective+attention_diversity_weight*((energy*mask).sum(-1)/mask.sum(-1).clamp_min(1)).mean()
             if not torch.isfinite(objective):raise RuntimeError('Nonfinite patient objective')
+            train_objective=float(objective.detach())
             objective.backward();torch.nn.utils.clip_grad_norm_(head.parameters(),1.);optimizer.step()
         if validation is not None:
             head.eval()
             with torch.no_grad():zz=head(**{k:v for k,v in validation.items() if k!='indices'}).cpu().numpy()
             vy=y[validation['indices']]
             score=(float(roc_auc_score(vy,zz)),-float(np.mean(np.logaddexp(0,zz)-vy*zz)),-epoch)
-            curve.append(dict(epoch=epoch,AUROC=score[0],NLL=-score[1]))
+            curve.append(dict(epoch=epoch,AUROC=score[0],NLL=-score[1],train_objective=train_objective))
             if best is None or score>best[0]:best=(score,copy.deepcopy(head.state_dict()),epoch);bad=0
             elif epoch > selector_warmup_epochs:bad+=1
             # Do not terminate before the source-defined selector phase has run.
@@ -66,4 +76,4 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
     return head,dict(best_epoch=best[2],epochs_run=epoch,curve=curve,
         parameters=sum(p.numel() for group in optimizer.param_groups for p in group['params']),allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
         pooling=pooling,readout=readout,source_only=True,
-        selector_warmup_epochs=selector_warmup_epochs)
+        selector_warmup_epochs=selector_warmup_epochs,attention_diversity_weight=attention_diversity_weight,fit_seconds=time.monotonic()-fit_started)

@@ -35,7 +35,7 @@ def main():
             assert len(fold['teacher_train'])>=27
         # Entire auxiliary/source-selection/refit workflow and resumed target
         # diagnostics, with all three seeds and no real patient tables.
-        cfg=runtime.config();cfg.update(max_epochs=2,patience=1,B5_aux_weights=[.1])
+        cfg=runtime.config();cfg.update(max_epochs=2,patience=1,B5_aux_weights=[.1],B5_teacher_epochs=13)
         (destination/'CONFIG.json').write_text(json.dumps(cfg,indent=2)+'\n')
         runtime.HERE=destination;run_b5.HERE=destination;run_b5.verify=lambda:None
         outer='one';tr=np.flatnonzero(groups!=outer)
@@ -50,7 +50,7 @@ def main():
         # Explicit numerical refit test only. Real controller requires all
         # five source gates before this phase can be admitted.
         run_b5.fit_fold(a,outer,source_only=False)
-        prediction_files=list(folder.glob('*.npz'));assert len(prediction_files)==2
+        prediction_files=list(folder.glob('*.npz'));assert len(prediction_files)==4
         hashes={p.name:runtime.sha(p) for p in prediction_files};run_b5.fit_fold(a,outer,source_only=False)
         assert hashes=={p.name:runtime.sha(p) for p in prediction_files}
         for path in prediction_files:

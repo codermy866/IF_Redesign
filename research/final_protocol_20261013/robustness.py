@@ -4,11 +4,12 @@ from runtime import HERE,ORIGINAL,save,config,verify
 import hashlib,json,time
 import numpy as np,torch,pandas as pd,joblib
 from scipy.special import expit
-from rime_dataset import load_patients,tensor_inputs,atoms
+from rime_dataset import load_patients,atoms
+from factorial_inputs import tensor_inputs
 from core_heads import restore,METHODS
 
 def changed(original,part,h,valid,method):
-    if method in ['C_MEASURE_MOMENT','D_RIME_LAPLACE']:h,valid=atoms(h,valid,part['sigma'],'unique')
+    if method in METHODS:h,valid=atoms(h,valid,part['sigma'],'unique')
     delta=h[...,None,:]-h[...,None,:,:];kernel=np.exp(-np.sum(delta*delta,-1)/(2*part['sigma']**2))
     return {**original,'h':torch.tensor(h,dtype=torch.double),'k':torch.tensor(kernel,dtype=torch.double),'valid':torch.tensor(valid,dtype=torch.bool)}
 

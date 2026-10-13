@@ -7,7 +7,7 @@ from if_redesign.rime.training import loss
 from scorers import ScoreControl,site_auxiliary
 
 def train_control(train,validation,y,groups,tau,lam,seed,*,mode='conditional',warmup=0,
-                  fixed_epochs=None,max_epochs=300,patience=30,auxiliary=None,aux_weight=0.):
+                  fixed_epochs=None,max_epochs=300,patience=30,auxiliary=None,aux_weight=0.,auxiliary_mode='value'):
     start=time.monotonic();torch.manual_seed(seed);np.random.seed(seed)
     head=ScoreControl(train['b'].shape[-1],tau,'measure','laplace',mode).to(train['h'])
     selector=[p for p in (getattr(head,'a',None),getattr(head,'U',None),getattr(head,'V',None),head.g) if p is not None and p.requires_grad]
@@ -26,7 +26,12 @@ def train_control(train,validation,y,groups,tau,lam,seed,*,mode='conditional',wa
             z=head(**{k:v for k,v in train.items() if k!='indices'})
             objective=loss(z,yy,gg,head,lam)
             if auxiliary is not None:
-                aux_loss=site_auxiliary(head,train,auxiliary,aux_weight)
+                if auxiliary_mode=='value':aux_loss=site_auxiliary(head,train,auxiliary,aux_weight)
+                elif auxiliary_mode=='patient':
+                    q=head.scores(train['h'],train['b']);mask=train['valid']
+                    mean=(q*mask).sum((1,2))/mask.sum((1,2)).clamp_min(1)
+                    aux_loss=aux_weight*torch.nn.functional.binary_cross_entropy_with_logits(train['anchor']+mean,yy)
+                else:raise ValueError(auxiliary_mode)
                 objective=objective+aux_loss
             if not torch.isfinite(objective):raise RuntimeError('Nonfinite control loss')
             train_loss=float(objective.detach());aux_loss=None if aux_loss is None else float(aux_loss.detach())
@@ -47,4 +52,4 @@ def train_control(train,validation,y,groups,tau,lam,seed,*,mode='conditional',wa
         parameters=sum(p.numel() for group in optimizer.param_groups for p in group['params']),
         allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
         pooling='measure',readout='laplace',source_only=True,selector_warmup_epochs=warmup,score_mode=mode,
-        auxiliary_weight=aux_weight,site_supervision_identifies_frame_value=False)
+        auxiliary_weight=aux_weight,auxiliary_mode=auxiliary_mode,site_supervision_identifies_frame_value=False)

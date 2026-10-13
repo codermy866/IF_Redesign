@@ -25,7 +25,7 @@ class ScoreControl(RIMEHead):
             with torch.no_grad():
                 self.local_scorer[0].weight.mul_(.01)
                 self.local_scorer[2].weight.zero_()
-        elif mode!='conditional':raise ValueError(mode)
+        elif mode not in ['conditional','context_shuffled']:raise ValueError(mode)
 
     def scores(self,h,b):
         if self.score_mode=='geometry':return torch.zeros_like(h[...,0])

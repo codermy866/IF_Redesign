@@ -20,7 +20,7 @@ def main():
     assert ast.dump(old,include_attributes=False)==ast.dump(new,include_attributes=False)
     with tempfile.TemporaryDirectory(prefix='rime_final_execution_') as temp:
         dest=Path(temp);folder=dest/'private/fold_features'/outer;folder.mkdir(parents=True)
-        cfg=config();cfg.update(taus=[.3],lambdas=[.003],seeds=[17,29,43],max_epochs=2,patience=1,warmup_grid=[0,1],B2_variants=['geometry','local','conditional','local_capacity_matched'])
+        cfg=config();cfg.update(attention_diversity_weight=.1,taus=[.3],lambdas=[.003],seeds=[17,29,43],max_epochs=2,patience=1,warmup_grid=[0,1],B2_variants=['geometry','local','conditional','local_capacity_matched','context_shuffled'])
         save(dest/'CONFIG.json',cfg)
         for name,fit in {'outer':tr,**{c:tr[g[tr]!=c] for c in sorted(set(g[tr]))}}.items():
             part=dict(h=h,valid=valid,sigma=.25,train=fit,anchor=dict(b=b,anchor=anchor,semantic_x=b[:,:26],initial_semantic_weight=np.zeros(26)))
@@ -29,7 +29,27 @@ def main():
         core_heads.fit_fold(outer,'cpu')
         run_heads.HERE=dest;run_heads.verify=lambda:None;run_heads.config=lambda:cfg;run_heads.load_patients=lambda:rows
         run_heads.run_control(outer,'B1','cpu');run_heads.run_control(outer,'B2','cpu')
-        files=sorted((dest/'private/head_runs'/outer).glob('*.npz'));assert len(files)==8
+        from factorial_inputs import tensor_inputs,shuffled_scoring_context
+        from rime_dataset import atoms
+        from robustness import changed
+        from if_redesign.rime.readout import RIMEHead
+        for name,(pool,readout) in core_heads.METHODS.items():
+            ti=tensor_inputs(part,np.arange(4),name,.3)
+            reference=tensor_inputs(part,np.arange(4),'C_MEASURE_MOMENT' if readout=='moment' else 'D_RIME_LAPLACE',.3)
+            assert torch.equal(ti['h'],reference['h']) and torch.equal(ti['valid'],reference['valid']) and torch.equal(ti['coordinate_scale'],reference['coordinate_scale'])
+            model=RIMEHead(34,.3,pool,readout).double()
+            with torch.no_grad():model.beta.fill_(.05)
+            original={k:v for k,v in ti.items() if k!='indices'}
+            copied=np.pad(h[:4],((0,0),(0,0),(0,2),(0,0)));copied[:,0,-2:]=h[:4,0,:1]
+            mask=np.pad(valid[:4],((0,0),(0,0),(0,2)));mask[:,0,-2:]=True
+            altered=changed(original,part,copied,mask,name)
+            with torch.no_grad():assert torch.allclose(model(**original),model(**altered),atol=1e-10,rtol=0)
+        ti=tensor_inputs(part,tr,'D_RIME_LAPLACE',.3);vi=tensor_inputs(part,np.arange(8),'D_RIME_LAPLACE',.3)
+        st,sv,audit=shuffled_scoring_context(ti,vi,17)
+        assert torch.equal(st['anchor'],ti['anchor']) and torch.equal(sv['anchor'],vi['anchor'])
+        assert set(audit['validation_donors']).issubset(set(tr)) and not np.any(audit['train_donors']==tr)
+        core_heads.fit_fold(outer,'cpu',methods={'ATTENTION_DIVERSITY_LAPLACE':('attention','laplace'),'MEASURE_LSE56':('measure','lse')})
+        files=sorted((dest/'private/head_runs'/outer).glob('*.npz'));assert len(files)==11
         for path in files:
             with np.load(path) as values:
                 assert values['seed_logits'].shape==(3,8) and np.isfinite(values['seed_logits']).all()
@@ -48,6 +68,6 @@ def main():
     save(HERE/'EXECUTION_TEST_GATE.json',dict(state='PASS',scope='synthetic execution only; never clinical outcomes',
         source_cv_nested_indices=True,all_three_seeds=True,all_four_core_cells=True,B1_B2_runs=True,
         resume_preserves_complete_predictions=True,shuffle_excludes_outer_and_has_no_self_donors=True,
-        independent_anchor_adapter_AST_matches_audited_CV1_index_fix=True))
+        common_dedup_inputs_and_copy_invariance_in_all_four_cells=True,context_shuffle_keeps_anchor_and_uses_source_donors=True,equal56_LSE_and_attention_diversity_controls=True,independent_anchor_adapter_AST_matches_audited_CV1_index_fix=True))
 
 if __name__=='__main__':main()

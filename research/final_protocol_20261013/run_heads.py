@@ -5,7 +5,8 @@ import argparse,json,time
 import runtime
 from runtime import HERE,save,verify,config
 import numpy as np,torch,joblib
-from rime_dataset import load_patients,prepare_fold,tensor_inputs
+from rime_dataset import load_patients,prepare_fold
+from factorial_inputs import tensor_inputs,shuffled_scoring_context
 import core_heads
 from train_control import train_control
 
@@ -40,6 +41,9 @@ def run_control(outer,phase,device):
                         assert np.array_equal(parts[held]['train'],fit)
                         ti=tensor_inputs(parts[held],fit,'D_RIME_LAPLACE',tau,device,rows)
                         vi=tensor_inputs(parts[held],val,'D_RIME_LAPLACE',tau,device,rows)
+                        if mode=='context_shuffled':
+                            ti,vi,audit=shuffled_scoring_context(ti,vi,seed)
+                            save(directory/f'{name}_seed{seed}_inner{held}_CONTEXT_SHUFFLE.json',audit)
                         head,md=train_control(ti,vi,y,g,tau,lam,seed,mode=mode,warmup=warmup,
                             max_epochs=cfg['max_epochs'],patience=cfg['patience'])
                         with torch.no_grad():z=head(**{k:v for k,v in vi.items() if k!='indices'}).cpu().numpy()
@@ -63,6 +67,10 @@ def run_control(outer,phase,device):
         vi=tensor_inputs(parts['outer'],test,'D_RIME_LAPLACE',tau,device,rows)
         logits=[]
         for seed in cfg['seeds']:
+            seed_ti,seed_vi=ti,vi
+            if best['score_mode']=='context_shuffled':
+                seed_ti,seed_vi,audit=shuffled_scoring_context(ti,vi,seed)
+                save(directory/f'{name}_seed{seed}_OUTER_CONTEXT_SHUFFLE.json',audit)
             if best['warmup']==0 and best['score_mode']=='conditional':
                 file=directory/f'D_RIME_LAPLACE_seed{seed}_OUTER.pt'
                 saved=torch.load(file,map_location='cpu',weights_only=False)
@@ -70,17 +78,18 @@ def run_control(outer,phase,device):
             else:
                 file=directory/f'{name}_seed{seed}_OUTER.pt'
                 # No test labels in fitting or in the refit epoch count.
-                head,md=train_control(ti,None,y,g,tau,lam,seed,mode=best['score_mode'],warmup=best['warmup'],
+                head,md=train_control(seed_ti,None,y,g,tau,lam,seed,mode=best['score_mode'],warmup=best['warmup'],
                     fixed_epochs=best['fixed_refit_epochs'])
                 torch.save(dict(state={k:v.cpu() for k,v in head.state_dict().items()},metadata=md,train=tr,
                     source_selection_frozen=True),file)
-            with torch.no_grad():logits.append(head(**{k:v for k,v in vi.items() if k!='indices'}).cpu().numpy())
+            with torch.no_grad():logits.append(head(**{k:v for k,v in seed_vi.items() if k!='indices'}).cpu().numpy())
         np.savez_compressed(directory/(name+'.npz'),test=test,seed_logits=np.stack(logits),source_indices=tr,
             source_seed_logits=best['source_seed_logits'][:,tr],source_y=y[tr],source_g=g[tr])
     save(directory/(phase+'_COMPLETE.json'),dict(state='COMPLETE',outer=outer,methods=list(arms)))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--fold',required=True);p.add_argument('--phase',choices=['core','B1','B2'],required=True)
+    p=argparse.ArgumentParser();p.add_argument('--fold',required=True);p.add_argument('--phase',choices=['core','controls','B1','B2'],required=True)
     p.add_argument('--device',default='cpu');a=p.parse_args();verify()
     if a.phase=='core':core_heads.fit_fold(a.fold,a.device)
+    elif a.phase=='controls':core_heads.fit_fold(a.fold,a.device,methods={'ATTENTION_DIVERSITY_LAPLACE':('attention','laplace'),'MEASURE_LSE56':('measure','lse')})
     else:run_control(a.fold,a.phase,a.device)

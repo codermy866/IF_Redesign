@@ -18,7 +18,7 @@ def loss(z,y,groups,model,lam):
 
 def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
                max_epochs=300,patience=30,fixed_epochs=None,caprmil_factory=None,
-               selector_warmup_epochs=0):
+               selector_warmup_epochs=0,attention_diversity_weight=0.):
     fit_started=time.monotonic()
     torch.manual_seed(seed);np.random.seed(seed)
     head=RIMEHead(train['b'].shape[-1],tau,pooling,readout).to(device=train['h'].device,dtype=train['h'].dtype)
@@ -47,8 +47,15 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
         if epoch and selector_warmup_epochs and epoch==selector_warmup_epochs+1:
             for p in selector:p.requires_grad_(True)
         if epoch:
-            head.train();optimizer.zero_grad();z=head(**{k:v for k,v in train.items() if k!='indices'})
+            head.train();optimizer.zero_grad()
+            inputs={k:v for k,v in train.items() if k!='indices'}
+            if attention_diversity_weight:z,detail=head(**inputs,return_details=True)
+            else:z=head(**inputs)
             objective=loss(z,yy,gg,head,lam)
+            if attention_diversity_weight:
+                w=detail['w'];mask=train['valid'].any(-1)
+                energy=.5*(w[...,None,:]@train['k']@w[...,None]).squeeze(-1).squeeze(-1)
+                objective=objective+attention_diversity_weight*((energy*mask).sum(-1)/mask.sum(-1).clamp_min(1)).mean()
             if not torch.isfinite(objective):raise RuntimeError('Nonfinite patient objective')
             train_objective=float(objective.detach())
             objective.backward();torch.nn.utils.clip_grad_norm_(head.parameters(),1.);optimizer.step()
@@ -69,4 +76,4 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
     return head,dict(best_epoch=best[2],epochs_run=epoch,curve=curve,
         parameters=sum(p.numel() for group in optimizer.param_groups for p in group['params']),allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
         pooling=pooling,readout=readout,source_only=True,
-        selector_warmup_epochs=selector_warmup_epochs,fit_seconds=time.monotonic()-fit_started)
+        selector_warmup_epochs=selector_warmup_epochs,attention_diversity_weight=attention_diversity_weight,fit_seconds=time.monotonic()-fit_started)

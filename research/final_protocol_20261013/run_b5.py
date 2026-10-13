@@ -14,7 +14,7 @@ def fit_fold(a,outer,source_only=True):
     folder=HERE/'private/head_runs'/outer;parts={p.stem:joblib.load(p) for p in (HERE/'private/fold_features'/outer).glob('*.joblib')}
     core=json.loads((folder/'D_RIME_LAPLACE_SOURCE_SELECTION_LOCK.json').read_text());tau,lam=core['selected_tau'],core['selected_lambda']
     diag=[]
-    for method in ['B5_VALUE_AUXILIARY','B5_SHUFFLED_AUXILIARY']:
+    for method in ['B5_VALUE_AUXILIARY','B5_SHUFFLED_AUXILIARY','B5_STRATIFIED_SHUFFLED','B5_PATIENT_AUXILIARY']:
         if (folder/(method+'.npz')).exists():continue
         candidates=[]
         for coefficient in cfg['B5_aux_weights']:
@@ -25,18 +25,20 @@ def fit_fold(a,outer,source_only=True):
                     fit=tr[g[tr]!=held];val=tr[g[tr]==held];part=parts[held]
                     assert np.array_equal(part['train'],fit)
                     targetdir=HERE/'private/b5_targets'/outer/held;targetdir.mkdir(parents=True,exist_ok=True)
-                    targetpath=targetdir/'VALUES.npy'
+                    targetpath=targetdir/f'VALUES_seed{seed}.npy'
                     if targetpath.exists():u=np.load(targetpath)
-                    else:u=targets(a,fit,targetdir/'CROSSFIT_AUDIT.json');np.save(targetpath,u)
+                    else:u=targets(a,fit,targetdir/f'CROSSFIT_AUDIT_seed{seed}.json',seed=seed);np.save(targetpath,u)
                     scale=max(float(np.var(u[fit])),cfg['B5_target_variance_floor']);supervision=u.copy()
-                    if method=='B5_SHUFFLED_AUXILIARY':
-                        supervision,records=shuffle(u,fit,g,seed);save(targetdir/f'SHUFFLE_seed{seed}.json',dict(records=records,source_only=True))
+                    if method in ['B5_SHUFFLED_AUXILIARY','B5_STRATIFIED_SHUFFLED']:
+                        supervision,records=shuffle(u,fit,g,seed,labels=y if method=='B5_STRATIFIED_SHUFFLED' else None)
+                        save(targetdir/f'{method}_SHUFFLE_seed{seed}.json',dict(records=records,source_only=True))
                     path=folder/f'{method}_aux{coefficient}_seed{seed}_inner{held}.pt'
                     ti=tensor_inputs(part,fit,'D_RIME_LAPLACE',tau,'cpu',rows);vi=tensor_inputs(part,val,'D_RIME_LAPLACE',tau,'cpu',rows)
                     if path.exists():saved=torch.load(path,map_location='cpu',weights_only=False)
                     else:
                         head,md=train_control(ti,vi,y,g,tau,lam,seed,max_epochs=cfg['max_epochs'],patience=cfg['patience'],
-                            auxiliary=torch.as_tensor(supervision[fit],dtype=torch.double),aux_weight=coefficient/scale)
+                            auxiliary=torch.as_tensor(supervision[fit],dtype=torch.double),aux_weight=coefficient if method=='B5_PATIENT_AUXILIARY' else coefficient/scale,
+                            auxiliary_mode='patient' if method=='B5_PATIENT_AUXILIARY' else 'value')
                         with torch.no_grad():z=head(**{k:v for k,v in vi.items() if k!='indices'}).cpu().numpy()
                         saved=dict(state={k:v.cpu() for k,v in head.state_dict().items()},metadata=md,prediction=z,train=fit,validation=val)
                         torch.save(saved,path)
@@ -48,7 +50,7 @@ def fit_fold(a,outer,source_only=True):
                         from scorers import ScoreControl
                         head=ScoreControl(vi['b'].shape[-1],tau,'measure','laplace','conditional').double()
                         head.load_state_dict(saved['state']);head.eval()
-                        reference=teacher(a,fit);held_adv=advantage(reference['prediction'][val],y[val])
+                        reference=teacher(a,fit,seed);held_adv=advantage(reference['prediction'][val],y[val])
                         with torch.no_grad():
                             q=head.scores(vi['h'],vi['b']);vp=((q*vi['valid']).sum(-1)/vi['valid'].sum(-1).clamp_min(1)).numpy()
                         records=[]
@@ -82,15 +84,19 @@ def fit_fold(a,outer,source_only=True):
             source_only=True,teacher_dependent=True))
         if source_only:continue
         targetdir=HERE/'private/b5_targets'/outer/'outer';targetdir.mkdir(parents=True,exist_ok=True)
-        path=targetdir/'VALUES.npy'
-        if path.exists():u=np.load(path)
-        else:u=targets(a,tr,targetdir/'CROSSFIT_AUDIT.json');np.save(path,u)
-        scale=max(float(np.var(u[tr])),cfg['B5_target_variance_floor']);ti=tensor_inputs(parts['outer'],tr,'D_RIME_LAPLACE',tau,'cpu',rows);vi=tensor_inputs(parts['outer'],te,'D_RIME_LAPLACE',tau,'cpu',rows);logits=[]
+        ti=tensor_inputs(parts['outer'],tr,'D_RIME_LAPLACE',tau,'cpu',rows);vi=tensor_inputs(parts['outer'],te,'D_RIME_LAPLACE',tau,'cpu',rows);logits=[]
         for seed in cfg['seeds']:
+            path=targetdir/f'VALUES_seed{seed}.npy'
+            if path.exists():u=np.load(path)
+            else:u=targets(a,tr,targetdir/f'CROSSFIT_AUDIT_seed{seed}.json',seed=seed);np.save(path,u)
+            scale=max(float(np.var(u[tr])),cfg['B5_target_variance_floor'])
             supervision=u.copy()
-            if method=='B5_SHUFFLED_AUXILIARY':supervision,records=shuffle(u,tr,g,seed);save(targetdir/f'SHUFFLE_seed{seed}.json',dict(records=records,source_only=True))
+            if method in ['B5_SHUFFLED_AUXILIARY','B5_STRATIFIED_SHUFFLED']:
+                supervision,records=shuffle(u,tr,g,seed,labels=y if method=='B5_STRATIFIED_SHUFFLED' else None)
+                save(targetdir/f'{method}_SHUFFLE_seed{seed}.json',dict(records=records,source_only=True))
             head,md=train_control(ti,None,y,g,tau,lam,seed,fixed_epochs=best['fixed_refit_epochs'],
-                auxiliary=torch.as_tensor(supervision[tr],dtype=torch.double),aux_weight=best['aux_coefficient']/scale)
+                auxiliary=torch.as_tensor(supervision[tr],dtype=torch.double),aux_weight=best['aux_coefficient'] if method=='B5_PATIENT_AUXILIARY' else best['aux_coefficient']/scale,
+                auxiliary_mode='patient' if method=='B5_PATIENT_AUXILIARY' else 'value')
             torch.save(dict(state={k:v.cpu() for k,v in head.state_dict().items()},metadata=md,train=tr,source_selection_frozen=True),folder/f'{method}_seed{seed}_OUTER.pt')
             with torch.no_grad():logits.append(head(**{k:v for k,v in vi.items() if k!='indices'}).numpy())
         np.savez_compressed(folder/(method+'.npz'),test=te,seed_logits=np.stack(logits),source_indices=tr,source_seed_logits=best['source_seed_logits'][:,tr],source_y=y[tr],source_g=g[tr])

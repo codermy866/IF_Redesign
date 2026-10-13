@@ -1,0 +1,156 @@
+{
+  "version": "RIME_FINAL_CORE_20261013",
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "local_dimension": 8,
+  "site_dimension": 56,
+  "taus": [
+    0.1,
+    0.3,
+    1.0
+  ],
+  "lambdas": [
+    0.003,
+    0.03,
+    0.3
+  ],
+  "max_epochs": 300,
+  "patience": 30,
+  "optimizer": "Adam",
+  "learning_rate": 0.003,
+  "ranking_weight": 0.1,
+  "frame_PCA_scale_floor": 0.005,
+  "kernel_bandwidth_floor": 0.001,
+  "exact_replication_feature_tolerance": 1e-06,
+  "replication_probability_tolerance": 1e-05,
+  "primary_contrasts": [
+    "D_MINUS_B0",
+    "D_MINUS_B"
+  ],
+  "maximum_search_configurations": 9,
+  "original_anchor": "Stage196 full 26D semantic PCA plus clinical/native scalar; no dimensions removed",
+  "anchor_input": "UNCHANGED four-frame montage [0,3,6,9], not phase4 single frame",
+  "specification_amendment": "Document describes public adapter phase4, but strongest actual Stage196 cache uses montage. Preserve the actual strong anchor; all new heads share it.",
+  "local_prompt": "reread",
+  "local_template": "20 slots: independent raw frame in slot0, 19 gray",
+  "local_preprocessing": "ResizeShortest256CenterCrop224",
+  "upstream_adaptation": false,
+  "independent_confirmation": false,
+  "expert_morphology_labels_available": false,
+  "stop_on_interface_degeneracy": true,
+  "walltime_hours": 168,
+  "kernel_bandwidth_estimator": "median of patient-wise median nonzero within-site distances",
+  "attention_tau": "softmax temperature",
+  "GMP_tau": "dual ridge coefficient",
+  "QP_tau": "linear score coefficient",
+  "MLP_capacity": "effective coefficient count rounded upward to at least conditional selector count",
+  "training_device": "two GPUs on different outer folds, frozen backbone unloaded during head training",
+  "observation_budget": "fixed trained models; both semantic montage context and local branch updated to same available frame subset",
+  "missing_modality_scope": "984 patients, fixed full model, full native patient-context recomputation; group/single/site mechanism subset remains prespecified200",
+  "semantic_refit_regularization": "effective original semantic coefficients, initialized exactly at original anchor",
+  "budget_sampling_seeds": [
+    17,
+    29,
+    43
+  ],
+  "budget_nesting": "Original four montage capture IDs remain visible at budgets4/6/10; other six frames have predefined label-free prefix orders; average probabilities within patient, no sample inflation",
+  "core_methods": [
+    "A_ATTENTION_MOMENT",
+    "B_ATTENTION_LAPLACE",
+    "C_MEASURE_MOMENT",
+    "D_RIME_LAPLACE"
+  ],
+  "warmup_grid": [
+    0,
+    5,
+    15
+  ],
+  "B1_tau_lambda": "fixed per outer fold at CORE_A4 source-selected values; three additional warmup candidates only",
+  "B2_tau_lambda": "fixed per outer fold at CORE_A4 source-selected values; no new tau/lambda search",
+  "B2_variants": [
+    "geometry",
+    "local",
+    "conditional",
+    "local_capacity_matched",
+    "context_shuffled"
+  ],
+  "bootstrap_replicates": 3000,
+  "bootstrap_seed": 199,
+  "threshold": "source OOF positive-logit 5th percentile, lower quantile; 95% source sensitivity target",
+  "development_scope": "Repeatedly used five-centre internal cross-centre development, not independent confirmation",
+  "extra_outer_search": false,
+  "B5_auxiliary": "site-mean score squared error against source-cross-fitted full-native site Brier advantage; no frame-advantage identification",
+  "B5_labels": "teacher training, preprocessing, epoch/model choice must exclude each labelled recipient; source validation targets generated using source-training teachers",
+  "B5_admission": "after core contribution report, within remaining original 168h budget; native recomputation required",
+  "new_comparison_family_size": 23,
+  "B5_aux_weights": [
+    0.01,
+    0.1,
+    1.0
+  ],
+  "B5_target_variance_floor": 0.0001,
+  "B5_teacher": "recipient-excluded frozen source-trained RIME reference, with source-only clinical/native/semantic anchor and independent source PCA8; tau=.3, lambda=.003, fixed60 masked updates; native full/site-deleted contexts, all conditional weights and site pooling recomputed",
+  "B5_teacher_lambda": 0.003,
+  "B5_teacher_seed_policy": "same 17/29/43, fold excludes recipient centre; exact source training patients listed privately",
+  "B5_posthoc_only": "identical clinical predictor and predictions to D_RIME_LAPLACE; no auxiliary training",
+  "B2_capacity": "local capacity-matched scorer uses a bias-free one-hidden-layer MLP plus genuinely trainable direct local feature paths: 9*floor((24+2D)/9) hidden/output weights and (24+2D)%9 direct weights; effective and allocated counts exactly equal to conditional scorer. Local linear and geometry remain explicit lower-capacity controls.",
+  "B5_teacher_optimizer": "Adam lr=.003, fixed60 updates, source-blind seeded cycle of full and12 site-deleted native conditions; one condition per unique patient per update",
+  "B5_source_stop_rule": "All five outer-source partitions must each have >=2/3 chosen seed fits beating zero and source-constant site-value MSE, with positive high-low actual average source Brier advantage. Freeze all source gates before any B5 outer prediction. On failure retain source/value/shuffled controls and stop B5 outer evaluation without additional search.",
+  "new_contrasts": [
+    "A2_MINUS_A1",
+    "A3_MINUS_A1",
+    "A4_MINUS_A2",
+    "A4_MINUS_A3",
+    "A4_MINUS_A1",
+    "INTERACTION",
+    "A4_MINUS_ANCHOR",
+    "B1_MINUS_JOINT",
+    "CONDITIONAL_MINUS_B2_GEOMETRY",
+    "CONDITIONAL_MINUS_B2_LOCAL",
+    "CONDITIONAL_MINUS_B2_LOCAL_CAPACITY_MATCHED",
+    "CONDITIONAL_MINUS_B2_CONTEXT_SHUFFLED",
+    "DEDUP_MINUS_RAW_ATTENTION_MOMENT",
+    "DEDUP_MINUS_RAW_ATTENTION_LAPLACE",
+    "A4_MINUS_ATTENTION_DIVERSITY",
+    "A4_MINUS_LSE56",
+    "B5_VALUE_MINUS_D_RIME_LAPLACE",
+    "B5_VALUE_MINUS_B5_SHUFFLED_AUXILIARY",
+    "B5_VALUE_MINUS_B5_STRATIFIED_SHUFFLED",
+    "B5_VALUE_MINUS_B5_PATIENT_AUXILIARY",
+    "B5_VALUE_MINUS_ANCHOR",
+    "CV1_A2_MINUS_A1",
+    "CV1_A2_MINUS_A0"
+  ],
+  "feature_robustness_protocol": {
+    "patient_subset": "original source-locked 200-patient mechanism subset; reused unchanged",
+    "noise_levels": [
+      0.01,
+      0.05,
+      0.1
+    ],
+    "seed": 199,
+    "scope": "fixed-native-context numerical feature diagnostics only; full native/site/modality/observation-budget interventions remain original campaign tasks",
+    "near_copies_are_not_exact_identity": true,
+    "failures_retained": true
+  },
+  "unified_method": "Patient-Conditioned Decision-Relevant Evidence Measure Learning",
+  "core_deduplication": "All four core cells use identical exact-numerical-atom deduplication with original raw source scaling unchanged",
+  "original_reusable_methods": [
+    "C_MEASURE_MOMENT",
+    "D_RIME_LAPLACE"
+  ],
+  "attention_diversity_weight": 0.1,
+  "B5_teacher_epochs": 60,
+  "B5_teacher_tau": 0.3,
+  "B5_additional_controls": [
+    "centre-by-site cross-patient shuffle",
+    "centre-by-pathology-label-by-site cross-patient shuffle",
+    "ordinary patient-level auxiliary prediction from shared scores; identical parameters"
+  ],
+  "B5_patient_auxiliary": "BCE(anchor + mean visible shared scores, patient CIN2+) at patient level; no assignment of patient pathology to frames/sites",
+  "B2_source_admission_rule": "Before B5 native additions: for each of geometry, matched local scorer, shuffled context controls, conditional source-selected AUC must have positive mean delta and positive delta in at least3/5 source partitions. If unsupported, complete original native verification but do not add CFV training as compensation.",
+  "deadline_policy": "Caller must supply the unchanged original campaign deadline_unix; no automatic extension."
+}
