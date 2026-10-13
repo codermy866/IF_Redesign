@@ -118,6 +118,7 @@ def main():
     wait_original();attach_cache();heads('core')
     state('CORE_CONTRIBUTIONS_REVIEWED_BEFORE_OPTIMIZATION',review='CORE_CONTRIBUTION_REVIEW.json')
     recovery=resume_original_protocol()
+    run(HERE/'robustness.py')
     # Preserve the original campaign's GPU priority; small controls use CPU.
     heads('B1',gpu=False);heads('B2',gpu=False)
     state('WAIT_ORIGINAL_GPU_TASKS_BEFORE_B5_FULL_NATIVE_RECOMPUTATION',original_recovery_pid=recovery.pid)
