@@ -17,7 +17,8 @@ def loss(z,y,groups,model,lam):
     return value+lam*sum((p*p).sum() for p in model.parameters() if p.requires_grad)
 
 def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
-               max_epochs=300,patience=30,fixed_epochs=None,caprmil_factory=None):
+               max_epochs=300,patience=30,fixed_epochs=None,caprmil_factory=None,
+               selector_warmup_epochs=0):
     torch.manual_seed(seed);np.random.seed(seed)
     head=RIMEHead(train['b'].shape[-1],tau,pooling,readout).to(device=train['h'].device,dtype=train['h'].dtype)
     if pooling=='pca_refit' and 'initial_semantic_weight' in train:
@@ -27,11 +28,22 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
         if caprmil_factory is None:
             raise ValueError("CAPR-MIL control requires a caller-supplied, separately licensed block factory")
         head.caprmil=caprmil_factory().to(device=train['h'].device,dtype=train['h'].dtype)
+    if selector_warmup_epochs < 0 or not isinstance(selector_warmup_epochs,int):
+        raise ValueError('selector_warmup_epochs must be a nonnegative integer')
+    # Construct all trainable parameter groups before freezing the selector.
+    # Phase 1 fits the patient residual against geometry-only/kernel or uniform
+    # attention; Phase 2 releases conditional scores and site attention.
+    # Zero reproduces the legacy joint-training regime exactly.
+    selector=(head.a,head.U,head.V,head.g)
     optimizer=torch.optim.Adam([p for p in head.parameters() if p.requires_grad],lr=.003)
+    if selector_warmup_epochs:
+        for p in selector:p.requires_grad_(False)
     indices=train['indices'];yy=torch.as_tensor(y[indices],device=train['h'].device,dtype=train['h'].dtype)
     gg=groups[indices];best=None;bad=0;curve=[]
     # The beta=0 anchor is a real selection candidate, including epoch zero.
     for epoch in range((fixed_epochs if fixed_epochs is not None else max_epochs)+1):
+        if epoch and selector_warmup_epochs and epoch==selector_warmup_epochs+1:
+            for p in selector:p.requires_grad_(True)
         if epoch:
             head.train();optimizer.zero_grad();z=head(**{k:v for k,v in train.items() if k!='indices'})
             objective=loss(z,yy,gg,head,lam)
@@ -51,4 +63,5 @@ def train_head(train,validation,y,groups,pooling,readout,tau,lam,seed,
     head.load_state_dict(best[1]);head.eval()
     return head,dict(best_epoch=best[2],epochs_run=epoch,curve=curve,
         parameters=sum(p.numel() for p in head.parameters() if p.requires_grad),allocated_parameters=sum(p.numel() for p in head.parameters()),seed=seed,tau=tau,lambda_=lam,
-        pooling=pooling,readout=readout,source_only=True)
+        pooling=pooling,readout=readout,source_only=True,
+        selector_warmup_epochs=selector_warmup_epochs)
