@@ -11,6 +11,8 @@ dist/
 *.ckpt
 *.safetensors
 *.npz
+*.npy
+*.parquet
 *.xlsx
 *.xls
 *.csv

@@ -1,6 +1,27 @@
-# IF_Redesign: native Qwen 27B adaptation
+# IF_Redesign: RIME-JEV evidence measure learning
 
-The latest code provides source-only medical task adaptation on the native
+The latest module is **RIME-JEV**: independent raw-frame JEV hidden contrasts,
+source-fitted eight-coordinate projection, exact-atom kernel measure pooling,
+signed 56-coordinate Laplace readout, and a patient residual over a complete
+caller-supplied clinical/native/semantic anchor. The local evidence branch
+merges exact copies within each scanner position before solving its conditional
+simplex QP. Ordinary attention combines scanner positions.
+
+Run its data-free CPU example after installation:
+
+```bash
+python scripts/demo_rime.py
+```
+
+See [RIME API and implementation boundaries](docs/RIME.md) and
+[defaults](configs/rime.json). The implementation is an experimental candidate;
+the new patient-level evaluation is still underway. Replication invariance is
+conditional on frozen features, scales, and patient context. It does not assert
+that an independently recomputed upstream anchor is invariant.
+
+## Native Qwen reference implementations
+
+The repository also provides source-only medical task adaptation on the native
 Qwen multimodal backbone loaded from the pinned **autotrust/JEV-27B-VL**
 release. It includes raw OCT frame preparation, patient/position task training,
 label-free feature extraction, and clinical-anchored patient readouts.
@@ -25,7 +46,18 @@ current readouts on source data, selects using a separate source partition,
 and predicts on synthetic held-out observations. It checks exact clinical
 fallback when visual evidence is absent. Its metrics are demonstration output.
 
-## Current code
+## RIME modules
+
+| Module | Function |
+| --- | --- |
+| `rime/frame_features.py` | Independent-frame frozen JEV extraction with direct-pixel parity check |
+| `rime/preprocessing.py` | Source projection/scaling, exact atom merging, and portable tensor inputs |
+| `rime/measure.py` | Simplex kernel QP, independent numerical reference, and implicit score gradients |
+| `rime/readout.py` | Equal-size Laplace/moment coordinates and hierarchical residual controls |
+| `rime/training.py` | Centre-balanced BCE/ranking training and source epoch selection |
+| `scripts/demo_rime.py` | Synthetic four-cell factorial example with held-out targets excluded |
+
+## Native Qwen modules
 
 | Module | Function |
 | --- | --- |

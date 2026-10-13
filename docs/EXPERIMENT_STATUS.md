@@ -1,13 +1,20 @@
 # Implementation status
 
-This release adds native Qwen 27B loading, restricted language-LoRA medical
+The latest candidate is RIME-JEV: frozen independent-frame JEV extraction,
+source-only projection, replication-invariant conditional kernel measure,
+signed Laplace readout, and residual training over a complete caller-supplied
+anchor. Its patient-level experiments are ongoing; publication of code does
+not establish its predictive advantage. See [RIME.md](RIME.md) for the API.
+
+The reference code includes native Qwen 27B loading, restricted language-LoRA medical
 adaptation, raw-frame patient/position prompts, label-free features and six
 current 32-coordinate readouts. It also preserves completed semantic/evidence
 numerical reference readouts. CFV-JEV, SOPI and G2-PCGrad remain historical
 implementations.
 
-The medical adaptation campaign is ongoing. This is a task-adaptation and
-mechanism-comparison baseline. Final method selection, predictive benefit and
+The RIME evaluation campaign is ongoing and retains a frozen released
+backbone. Native task-adaptation APIs remain available as reference code.
+Final method selection, predictive benefit and
 a differentiated algorithmic contribution are not established by publishing
 this code. Synthetic checks verify computation, not clinical performance.
 
