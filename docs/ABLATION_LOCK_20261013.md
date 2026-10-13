@@ -5,7 +5,7 @@
 ## Current model dependency audit
 
 1. **Frozen JEV raw OCT to 8D PCA**: the first 8 source-weighted variance directions need not preserve CIN2+ discrimination; a bag-level label cannot be treated as a frame pathology label.
-2. **Conditional kernel QP**: the score `q=tanh(a'h+<hU,bV>)` is zero initially (a=0; hU and bV small); the kernel QP initially optimizes geometry/diversity, not clinical relevance. Exact-feature deduplication establishes a numerical invariance only with frozen preprocessing and context.
+2. **Conditional kernel QP**: the score `q=tanh(a'h+<hU,bV>)` is **near zero, not exactly zero**, initially (a=0; U and V start with small nonzero random values); the kernel QP initially emphasizes geometry/diversity rather than learned clinical relevance. Exact-feature deduplication establishes a numerical invariance only with frozen preprocessing and context.
 3. **Signed Laplace readout**: fixed scales (0.5,2,8) may saturate and have correlated channels; a 56D Moment/Legendre control is already implemented. Laplace here is a set of empirical exponential responses, *not a fitted Laplace distribution*.
 4. **Anchor residual**: `z=anchor+r @ beta` with `beta=0`; therefore the first backward pass supplies exactly zero prediction-loss gradient to `a,U,V,g`. Later gradients exist after beta moves, but selector learning may lag the small-data optimization. A source-only two-stage ablation is now exposed.
 5. **Historical CFV**: view-removal code is separate from the RIME head. It must not be described as an already joint-trained RIME+CFV contribution.
