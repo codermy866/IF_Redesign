@@ -1,6 +1,22 @@
-# IF_Redesign: RIME-JEV evidence measure learning
+# IF_Redesign: PALE-JEV and evidence-fusion research code
 
-The latest module is **RIME-JEV**: independent raw-frame JEV hidden contrasts,
+The current empirical method is **PALE-JEV**: frozen released JEV frame
+contrasts, source-only PCA coordinates, a shared residual frame MLP,
+signed Laplace frame responses, masked within-site means, site attention,
+and a patient logit update over a frozen multimodal anchor. The code path is
+`RIMEHead(pooling="mlp", readout="laplace")`.
+
+The latest code adds a common source-centering/gray-reanchoring projection
+repair and six matched patient-loss controls. **ARDR remains an optional
+experimental loss, not the default main method.** See the
+[portable PALE loss API](docs/PALE_ARDR.md) and
+[source-only execution adapters](research/pale_ardr_protocol_20261014/README.md).
+These modules change training objectives without adding another backbone or
+forward architecture. They establish no independent clinical-validation claim.
+
+## Earlier RIME candidate
+
+The earlier **RIME-JEV** candidate provides independent raw-frame JEV hidden contrasts,
 source-fitted eight-coordinate projection, exact-atom kernel measure pooling,
 signed 56-coordinate Laplace readout, and a patient residual over a complete
 caller-supplied clinical/native/semantic anchor. The local evidence branch
@@ -15,7 +31,7 @@ python scripts/demo_rime.py
 
 See [RIME API and implementation boundaries](docs/RIME.md) and
 [defaults](configs/rime.json). The implementation is an experimental candidate;
-the new patient-level evaluation is still underway. Replication invariance is
+its admission depends on matched experiments. Replication invariance is
 conditional on frozen features, scales, and patient context. It does not assert
 that an independently recomputed upstream anchor is invariant.
 

@@ -1,0 +1,185 @@
+{
+  "version": "PALE_ARDR_SHARED_PREPROCESSING_REPAIR_FR1",
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "max_epochs": 300,
+  "patience": 30,
+  "lr": 0.003,
+  "ranking_weight": 0.1,
+  "base_lambdas": [
+    0.003,
+    0.03,
+    0.3
+  ],
+  "tau_inactive": 0.3,
+  "methods": [
+    "A0_PALE",
+    "A1_STRONG_L2",
+    "A2_ANCHOR_KL",
+    "A3_GROUP_DRO",
+    "A4_GLOBAL_RISK",
+    "A5_ARDR"
+  ],
+  "candidates": {
+    "A1_STRONG_L2": [
+      {
+        "lambda_multiplier": 1.5
+      },
+      {
+        "lambda_multiplier": 2.0
+      },
+      {
+        "lambda_multiplier": 3.0
+      },
+      {
+        "lambda_multiplier": 5.0
+      },
+      {
+        "lambda_multiplier": 10.0
+      },
+      {
+        "lambda_multiplier": 20.0
+      }
+    ],
+    "A2_ANCHOR_KL": [
+      {
+        "gamma": 0.03
+      },
+      {
+        "gamma": 0.1
+      },
+      {
+        "gamma": 0.3
+      },
+      {
+        "gamma": 1.0
+      },
+      {
+        "gamma": 3.0
+      },
+      {
+        "gamma": 10.0
+      }
+    ],
+    "A3_GROUP_DRO": [
+      {
+        "eta": 0.001,
+        "lambda_multiplier": 1.0
+      },
+      {
+        "eta": 0.001,
+        "lambda_multiplier": 3.0
+      },
+      {
+        "eta": 0.01,
+        "lambda_multiplier": 1.0
+      },
+      {
+        "eta": 0.01,
+        "lambda_multiplier": 3.0
+      },
+      {
+        "eta": 0.1,
+        "lambda_multiplier": 1.0
+      },
+      {
+        "eta": 0.1,
+        "lambda_multiplier": 3.0
+      }
+    ],
+    "A4_GLOBAL_RISK": [
+      {
+        "epsilon": 0.0,
+        "gamma": 0.3
+      },
+      {
+        "epsilon": 0.0,
+        "gamma": 1.0
+      },
+      {
+        "epsilon": 0.0,
+        "gamma": 3.0
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 0.3
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 1.0
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 3.0
+      }
+    ],
+    "A5_ARDR": [
+      {
+        "epsilon": 0.0,
+        "gamma": 0.3
+      },
+      {
+        "epsilon": 0.0,
+        "gamma": 1.0
+      },
+      {
+        "epsilon": 0.0,
+        "gamma": 3.0
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 0.3
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 1.0
+      },
+      {
+        "epsilon": 0.01,
+        "gamma": 3.0
+      }
+    ]
+  },
+  "preprocessing": "FR1: same source-fitted PCA8 directions/scales; apply source centering in projected coordinates before clipping, subtract the identically transformed gray reference, divide by6 to preserve [-1,1]. All six arms and readout scales refitted under this identical label-free repair. No approximation deduplication.",
+  "projection_gate": {
+    "maximum_source_clip_fraction": 0.15,
+    "minimum_nonconstant_dimensions": 7,
+    "std_nonconstant_threshold": 0.01
+  },
+  "selection": "All arms: early stop by inner held-source NLL then Brier then higher AUC then earlier epoch; outer hyperparameter choice by equal-centre held-source NLL then equal-centre Brier then higher pooled source AUC. Existing frozen epoch/AUC-selected historical results used only for reproduction.",
+  "fixed_refit_epochs": "median of source chosen seed/fold best epochs, no outer selection",
+  "original_pale_reuse": false,
+  "patient_weight": "centre-balanced BCE/ranking; ARDR equally weights centres; Global/KL use patient averages per supplied definitions",
+  "anchor": "Frozen original Stage196/199 legal source models; training anchor in-sample, selection/validation anchor excludes held source patients. Optimism audited and no source-risk generalization guarantee.",
+  "pilot": "All six methods and all fixed candidates, three seeds; only one prespecified source held-centre. No outer predictions in pilot. Stop if all ARDR candidates collapse (mean abs correction<=.01, or <10% of A0) and none improves source-validation NLL by .001 with aggregate AUPRC gain over anchor. Otherwise full source-CV in five outer partitions.",
+  "bootstrap_replicates": 3000,
+  "bootstrap_seed": 200,
+  "paired_family_size": 6,
+  "threshold": "95% source OOF sensitivity target, lower positive-logit .05 quantile; shared RULE, model-specific source thresholds",
+  "final_admission": {
+    "source_constraint_satisfaction_fraction_min": 0.8,
+    "held_centres_NLL_improved_min": 3,
+    "worst_center_NLL_must_not_increase": true,
+    "paired_NLL_CI_upper_vs_A0_negative": true,
+    "controls": "point NLL lower vs A1/A2/A3/A4, >=3 improved centres each, Bonferroni-adjusted NLL interval upper <0 for each to claim independent added value",
+    "pooled_and_macro_AUC_allowed_point_drop_vs_repaired_A0": 0.01,
+    "minimum_mean_abs_logit_update": 0.01,
+    "minimum_update_relative_to_repaired_A0": 0.1,
+    "known_CIN3_extra_total_misses_allowed": 0,
+    "known_CIN3_extra_per_center_misses_allowed": 1,
+    "soft_penalty_not_hard_guarantee": true
+  },
+  "maximum_new_configs_per_added_arm": 6,
+  "independent_confirmation": false,
+  "stop_new_architecture_after_this_trial": true,
+  "caller_required_fields": [
+    "centers",
+    "pilot_outer",
+    "pilot_held_source",
+    "deadline_unix",
+    "original_deadline_unix"
+  ]
+}
