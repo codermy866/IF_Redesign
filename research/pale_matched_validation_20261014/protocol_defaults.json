@@ -1,0 +1,280 @@
+{
+  "version": "PALE_FIXED_VALIDATION_FR1_NLL",
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "centers": [
+    "center_1",
+    "center_2",
+    "center_3",
+    "center_4",
+    "center_5"
+  ],
+  "max_epochs": 300,
+  "patience": 30,
+  "lr": 0.003,
+  "lambdas": [
+    0.003,
+    0.03,
+    0.3
+  ],
+  "variants": {
+    "P1_MEAN": {
+      "adapt": "none",
+      "order": "adapt_phi_mean",
+      "readout": "mean",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "P2_MLP_MOMENT": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "moment",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "P3_PALE": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "P4_NO_MLP_LAPLACE": {
+      "adapt": "none",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "P5_MLP_MEAN_LAPLACE": {
+      "adapt": "residual",
+      "order": "adapt_mean_phi",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "A1_MEAN_MLP_PHI": {
+      "adapt": "residual",
+      "order": "mean_adapt_phi",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "B2_MLP_NO_SHORTCUT": {
+      "adapt": "plain",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C1_MLP_MEAN": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "mean",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C2_MLP_MEAN_STD": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "std",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C4_MLP_LSE56": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "lse",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C5_MLP_LEARNED56": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "learned",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C7_SINGLE_SCALE": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "single",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "C8_MAGNITUDE": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "magnitude",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "D1_FLAT": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "flat",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "D2_SITE_MEAN": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "mean",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "D4_NO_ANCHOR": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": false,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "D5_NO_RANKING": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.0,
+      "weighting": "centre"
+    },
+    "D6_PATIENT_WEIGHTED": {
+      "adapt": "residual",
+      "order": "adapt_phi_mean",
+      "readout": "laplace",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "patient"
+    },
+    "S_MAX": {
+      "adapt": "none",
+      "order": "adapt_phi_mean",
+      "readout": "mean",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre",
+      "pool": "max"
+    },
+    "S_LSE": {
+      "adapt": "none",
+      "order": "adapt_phi_mean",
+      "readout": "lse",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    },
+    "S_MEAN_STD": {
+      "adapt": "none",
+      "order": "adapt_phi_mean",
+      "readout": "std",
+      "site": "attention",
+      "anchor": true,
+      "ranking": 0.1,
+      "weighting": "centre"
+    }
+  },
+  "core": [
+    "P1_MEAN",
+    "P2_MLP_MOMENT",
+    "P3_PALE",
+    "P4_NO_MLP_LAPLACE",
+    "P5_MLP_MEAN_LAPLACE"
+  ],
+  "extension": [
+    "A1_MEAN_MLP_PHI",
+    "B2_MLP_NO_SHORTCUT",
+    "C1_MLP_MEAN",
+    "C2_MLP_MEAN_STD",
+    "C4_MLP_LSE56",
+    "C5_MLP_LEARNED56",
+    "C7_SINGLE_SCALE",
+    "C8_MAGNITUDE",
+    "D1_FLAT",
+    "D2_SITE_MEAN",
+    "D4_NO_ANCHOR",
+    "D5_NO_RANKING",
+    "D6_PATIENT_WEIGHTED",
+    "S_MAX",
+    "S_LSE",
+    "S_MEAN_STD"
+  ],
+  "reuse_P3_from": "200_ARDR_JEV_FINAL_20261014:A0_PALE",
+  "bootstrap_replicates": 3000,
+  "bootstrap_seed": 201,
+  "primary_contrasts": [
+    "P3_PALE-P0_ANCHOR",
+    "P3_PALE-P1_MEAN",
+    "P3_PALE-P2_MLP_MOMENT",
+    "P3_PALE-P4_NO_MLP_LAPLACE",
+    "P3_PALE-P5_MLP_MEAN_LAPLACE"
+  ],
+  "primary_family_size": 5,
+  "selection": "inner held-source NLL, Brier, AUROC, earlier epoch; candidate equal-source-centre NLL then Brier then pooled source AUROC",
+  "refit_epochs": "median source best epochs",
+  "threshold": "95% source OOF sensitivity; lower positive logit .05 quantile",
+  "readout_scaling": "patient/site/frame-balanced source-only raw reference responses, common within each readout; same Laplace scale for all order/aggregation variants; learned56 uses unit scale",
+  "independent_confirmation": false,
+  "negative_results_retained": true,
+  "search_expansion": false,
+  "frame_budgets": [
+    1,
+    2,
+    4,
+    6,
+    8,
+    10
+  ],
+  "site_budgets": [
+    0,
+    3,
+    6,
+    9,
+    12
+  ],
+  "mask_repeats": 3,
+  "mask_seed": 201,
+  "source_pilot_for_performance_selection": false,
+  "caller_required_fields": [
+    "centers",
+    "deadline_unix"
+  ]
+}

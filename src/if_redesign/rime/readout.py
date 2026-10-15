@@ -14,8 +14,14 @@ def coordinates(h,kind='laplace'):
         for degree in range(2,8):
             p=((2*degree-1)*h*p1-(degree-1)*p0)/degree
             zero=-(degree-1)*zero0/degree
-            terms.append(p-zero);p0,p1=p1,p;zero0,zero1=zero1,zero
+            terms.append(p-zero)
+            p0,p1=p1,p
+            zero0,zero1=zero1,zero
         return torch.stack(terms,-1).flatten(-2)
+    if kind=='lse':
+        # Singleton responses for a common source raw-frame scale. Actual
+        # weighted LogSumExp is evaluated after constructing the same measure.
+        return torch.stack([h]+[(sign*h).clamp_min(0) for sign in [1.,-1.] for _ in [.5,2.,8.]],-1).flatten(-2)
     raise ValueError(kind)
 
 class RIMEHead(nn.Module):
@@ -71,7 +77,12 @@ class RIMEHead(nn.Module):
             eye=torch.eye(gram.shape[-1],device=gram.device,dtype=gram.dtype)
             w=torch.linalg.solve(gram+self.tau*eye,safe.to(q.dtype).unsqueeze(-1)).squeeze(-1)*valid
         else:raise ValueError(self.pooling)
-        v=(w[...,None]*coordinates(h,self.readout)).sum(-2)/coordinate_scale
+        if self.readout=='lse':
+            terms=[(w[...,None]*h).sum(-2)]
+            for sign in [1.,-1.]:
+                for t in [.5,2.,8.]:terms.append(torch.log1p((w[...,None]*torch.expm1(t*(sign*h).clamp_min(0))).sum(-2))/t)
+            v=torch.stack(terms,-1).flatten(-2)/coordinate_scale
+        else:v=(w[...,None]*coordinates(h,self.readout)).sum(-2)/coordinate_scale
         if self.pooling=='gmp':v=torch.nn.functional.normalize(v,dim=-1)
         v=v*site_valid[...,None]
         safe_site=site_valid.clone();safe_site[:,0]=safe_site[:,0] | ~site_valid.any(-1)

@@ -1,0 +1,22 @@
+[
+  {
+    "folder": "RRT-MIL",
+    "url": "https://github.com/DearCaat/RRT-MIL.git",
+    "commit": "3320b6616b2c3d96ddc5bcd1aecea865a064987f"
+  },
+  {
+    "folder": "WiKG",
+    "url": "https://github.com/WonderLandxD/WiKG.git",
+    "commit": "eb3144fb8267f525c57e71ced5c5b2b6a1c42a93"
+  },
+  {
+    "folder": "ACMIL",
+    "url": "https://github.com/dazhangyu123/ACMIL.git",
+    "commit": "e53d19c81f3892256d41962ffc4352cc91a4f834"
+  },
+  {
+    "folder": "DGR-MIL",
+    "url": "https://github.com/ChongQingNoSubway/DGR-MIL.git",
+    "commit": "ac6257ffa768f154c52ac8b01e2086e5d3a714bf"
+  }
+]

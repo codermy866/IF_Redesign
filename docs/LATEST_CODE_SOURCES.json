@@ -1,0 +1,262 @@
+{
+  "scope": "Code-only method snapshot; no model selection or clinical result declaration",
+  "files": [
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/audit.py",
+      "published": "research/pale_matched_validation_20261014/audit.py",
+      "sha256": "2a787259db7489f854e4b98f899d504cf693a98cf2a7a55ffdb2996fdf8c1a8e"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/controller.py",
+      "published": "research/pale_matched_validation_20261014/controller.py",
+      "sha256": "f52dd9913f25f39cca56b408c94035423c11449a7b5172c285b49c0de9e67ef6"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/data.py",
+      "published": "research/pale_matched_validation_20261014/data.py",
+      "sha256": "14bbcda75ba19114f8fd7c704bf1128b0a40208c8c658501912859c3d2031e7d"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/extension_cpu_controller.py",
+      "published": "research/pale_matched_validation_20261014/extension_cpu_controller.py",
+      "sha256": "2cba122a8d78ffd261c17892d96e0b044515b8c852273118a7901315ba90f56f"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/heads.py",
+      "published": "research/pale_matched_validation_20261014/heads.py",
+      "sha256": "eddca70a12c3176fc3b39cc8bce6e1241887212c41c1da2214f15493e7e7bc52"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/native_robustness.py",
+      "published": "research/pale_matched_validation_20261014/native_robustness.py",
+      "sha256": "9a0fceb227fe1c3f74c2f4cf153d0443c3553b2b40ba4a911437471604d066c0"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/native_summary.py",
+      "published": "research/pale_matched_validation_20261014/native_summary.py",
+      "sha256": "baebcd09b2a7ca091e43a39c43c9c17d9bc16f077a0fcda2ff45590ebd2486c8"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/preflight.py",
+      "published": "research/pale_matched_validation_20261014/preflight.py",
+      "sha256": "b3e7438d4a9d41e843bb9c49686a43ecfa14992129da9d4b45fb6f98af4a24d7"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/recent_controller.py",
+      "published": "research/pale_matched_validation_20261014/recent_controller.py",
+      "sha256": "8da68f5421e6b58e170a0305e2a5cc3c79189b3d525d1cb287568745b69a6149"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/recent_models.py",
+      "published": "research/pale_matched_validation_20261014/recent_models.py",
+      "sha256": "3bf19e70f27c6dd4a19d6cf71d097b261046e268d994e8d8296b6d073b607364"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/recent_report.py",
+      "published": "research/pale_matched_validation_20261014/recent_report.py",
+      "sha256": "fb4625f8c35436da0016e6079ac51e0cd16e53690a04f65fe5a2220a9f52f496"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/recent_training.py",
+      "published": "research/pale_matched_validation_20261014/recent_training.py",
+      "sha256": "c3d09d672030a46493b338d160dd70f9dce4910b72d843e26250d2ea6cd161a8"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/recent_worker.py",
+      "published": "research/pale_matched_validation_20261014/recent_worker.py",
+      "sha256": "cc5d08fb9fad81fa78ac33286e5b736a84575afa0e2cdd4e8ce6b67c17283dd4"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/report.py",
+      "published": "research/pale_matched_validation_20261014/report.py",
+      "sha256": "6bb850683c58901cafe0c703bf998a9ca21c912efeba22ae3e049435fbf6bdc8"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/robustness.py",
+      "published": "research/pale_matched_validation_20261014/robustness.py",
+      "sha256": "8bcf5c51df0672726ed3872dc99fde1b9c37b31ccd1834158b82d21a245e0548"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/runtime.py",
+      "published": "research/pale_matched_validation_20261014/runtime.py",
+      "sha256": "8a040969590e552753bb293909856c3c6a21486dce39644f4291915a596dcdac"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/system_baselines.py",
+      "published": "research/pale_matched_validation_20261014/system_baselines.py",
+      "sha256": "8ac0b21991119c55de4f988c98b891f0419e4178725c57b299129b0d2d25333c"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/training.py",
+      "published": "research/pale_matched_validation_20261014/training.py",
+      "sha256": "669cc4d7dc4bb2326952dfc0d6c26f93d0d901a11ecadeefd9f6f415e0a248aa"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/worker.py",
+      "published": "research/pale_matched_validation_20261014/worker.py",
+      "sha256": "83d916d433a95269a879fc2793e26dd25c1abbb3f897c760f361b500c458bc33"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/__init__.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/__init__.py",
+      "sha256": "0388578488632fa546d10ae3a33851887ecc5e29315340c94c07a69df4f83f77"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/__init__.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/__init__.py",
+      "sha256": "96b1fd1a1a1de4c98ae014c5e59187a3e5c48788c95fa9b4daa5199a84a380ff"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/frame_features.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/frame_features.py",
+      "sha256": "b4fc03fbfe1841c30a6b6603ea198bbb862f1a22561f0d8d156df77da976d298"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/measure.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/measure.py",
+      "sha256": "c94056580b29fccee74ed92a10225e0f9e6d434b74aed5c7c829cdd1a8c4187b"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/preprocessing.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/preprocessing.py",
+      "sha256": "4dfa4f9ab9182a13108e650bd6676bbc306c0444a64f6d3295fae127a79b128b"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/readout.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/readout.py",
+      "sha256": "99555dc0d1dc983d64c506bab8b54d8206c0937bd9f571b394272671600f329d"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/code/if_redesign/rime/training.py",
+      "published": "research/pale_matched_validation_20261014/code/if_redesign/rime/training.py",
+      "sha256": "fc1cc74cc57f20c239cf11710fc761c824a025cdbefa1275268b0dfa63895beb"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/run_factorial.py",
+      "published": "research/stage196_semantic_reference_20261012/run_factorial.py",
+      "sha256": "5b821b0c700e72e729c6a45e855caac72ca2458a95e38235b652f71da65ab46a"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/core.py",
+      "published": "research/stage196_semantic_reference_20261012/core.py",
+      "sha256": "17936ac07625c75c000ad91431b8c17384afb69174f777f3a6b820ceb9bd2b36"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/paired_statistics.py",
+      "published": "research/stage196_semantic_reference_20261012/paired_statistics.py",
+      "sha256": "f027dd89af855ad66ee0f6dff710f5332f853fce7ade5968cf3820cac502caab"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/native_worker.py",
+      "published": "research/stage196_semantic_reference_20261012/native_worker.py",
+      "sha256": "58b94ec0e8ab35bcbe4817d0bbd0fe916586478ad07fb4d641ca1fdc6cb46ee0"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/prepare_cache.py",
+      "published": "research/stage196_semantic_reference_20261012/prepare_cache.py",
+      "sha256": "0a35ad9b0920c99f6ee88d2dee8ce0595ef7d08cad1ea44f607b5e7a5012a933"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/audit_data.py",
+      "published": "research/stage196_semantic_reference_20261012/audit_data.py",
+      "sha256": "af93ff5cf39d5d9b839753a5fa1740a90d844cccf89f65d382fe8ccafe6b3839",
+      "original_sha256": "ceb76a719f8d974420e98a6ded34619e69b1fe058ab5a01b3d769897129813ab",
+      "publication_change": "Replace host-specific input paths with caller environment variables only"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/verify_core.py",
+      "published": "research/stage196_semantic_reference_20261012/verify_core.py",
+      "sha256": "e88234fe1c90c2062112bb1217add0f4c77c20c458f9f90ef6cc05b4a7700f76"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/verify_pipeline.py",
+      "published": "research/stage196_semantic_reference_20261012/verify_pipeline.py",
+      "sha256": "2dda03fc6750f356d19e58917be36571e3cf443f35f97ff899583b134883ff35"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/refresh_safety.py",
+      "published": "research/stage196_semantic_reference_20261012/refresh_safety.py",
+      "sha256": "24b9b89a7143653346ecb1fdf57c15bd8b243ad0d852f6c200e37876d7a413b1"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/deletion_audit.py",
+      "published": "research/stage196_semantic_reference_20261012/deletion_audit.py",
+      "sha256": "2d4062b904e2dd457d03a1acd072304bbc19a75e81e025258685684b0a045e9a"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/__init__.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/__init__.py",
+      "sha256": "4e032c89b59e28ff66b0683e51155f0c8d766f24f3e6971451dcfa2c7ed0d9c2"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/adapter.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/adapter.py",
+      "sha256": "0382088dc5e0604efa96fc72d2bd3b7ec4e4cc3d43911052710ab2bbee52b2bd"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/evidence_readout.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/evidence_readout.py",
+      "sha256": "15762559d45b00c9a1772ecfcd141abd2863dfa974d1df914f7eff042399d801"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/features.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/features.py",
+      "sha256": "ef44e90559283434b56a330a3abc6dd705c16ba9f6db989e94faa816418bde89"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/interventions.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/interventions.py",
+      "sha256": "d60a6948af9250fdd7305a7c4a897567708df6a729da17867cf62a6f69b012b5"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/native.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/native.py",
+      "sha256": "4b3e9e239793c3f278cfdb405974d69228dff9d41496a772ad52ae70c6a193f2"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/readout.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/readout.py",
+      "sha256": "a5721162529d886941235fa96a9a762d35062230139f9f6be23f43b3bd88bad1"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/semantic_readout.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/semantic_readout.py",
+      "sha256": "53a32c1022068b5a3fd9c2657f0c0d2cba2c3858330ac9ea41d0bdb1026ae5f1"
+    },
+    {
+      "source": "03_new_experiment_design/196_controlled_cfv_jev_20261012/qwen27b/training.py",
+      "published": "research/stage196_semantic_reference_20261012/qwen27b/training.py",
+      "sha256": "dc53e09bb04a86a7fe2e4cb63806720c7a762e9836040888570c6e68958a153b"
+    },
+    {
+      "source": "scripts/rime_common.py",
+      "published": "scripts/rime_common.py",
+      "sha256": "54a0976bf5fbcdf03d6ea244545c27ed56daeefda5704d524cae971871ea15f9"
+    },
+    {
+      "source": "scripts/rime_dataset.py",
+      "published": "scripts/rime_dataset.py",
+      "sha256": "2abebcb67714b78cf8e1686e2be045cde84bdfa2ea7a001bc391ad0fd009f134"
+    },
+    {
+      "source": "scripts/rime_frame_worker.py",
+      "published": "scripts/rime_frame_worker.py",
+      "sha256": "47a832151cb70064765844a17cd7794c12cac7341b197bdbf7cf192c3f9bc56a"
+    },
+    {
+      "source": "03_new_experiment_design/199_final_core_confirmation_20261013/anchor_adapter.py",
+      "published": "research/pale_input_preparation_20261013/anchor_adapter.py",
+      "sha256": "e42927cc842839eba72080e0fa76d0db0d2be2efaedbc4cd0ed4a522d6fa1ab6"
+    },
+    {
+      "source": "03_new_experiment_design/200_ARDR_JEV_FINAL_20261014/data.py",
+      "published": "research/pale_input_preparation_20261013/fr1_fold_data.py",
+      "sha256": "f10c54c176d982d7ac0d5fa829ad6adb6a33fa5b0dcd5224fd5d2b4814682485"
+    },
+    {
+      "source": "03_new_experiment_design/201_PALE_MATCHED_VALIDATION_20261014/heads.py",
+      "published": "src/if_redesign/pale_matched/heads.py",
+      "sha256": "eddca70a12c3176fc3b39cc8bce6e1241887212c41c1da2214f15493e7e7bc52"
+    }
+  ]
+}
