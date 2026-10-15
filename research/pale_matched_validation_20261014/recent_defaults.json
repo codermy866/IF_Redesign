@@ -1,0 +1,64 @@
+{
+  "version": "PINNED_AUTHOR_ADAPTATION_1",
+  "kinds": [
+    "RRT",
+    "WiKG",
+    "ACMIL",
+    "DGR"
+  ],
+  "simple": [
+    "DeepSets",
+    "ABMIL"
+  ],
+  "tracks": [
+    "A",
+    "B"
+  ],
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "centers": [
+    "center_1",
+    "center_2",
+    "center_3",
+    "center_4",
+    "center_5"
+  ],
+  "source_weight_decay_candidates": [
+    0.0,
+    1e-05,
+    0.0001
+  ],
+  "max_epochs": 300,
+  "patience": 30,
+  "source_selection": "NLL then Brier then AUROC; equal-centre candidate selection",
+  "refit_epochs": "median selected source epochs",
+  "lr": {
+    "RRT": 0.0002,
+    "WiKG": 0.0001,
+    "ACMIL": 0.0001,
+    "DGR": 0.0005,
+    "DeepSets": 0.003,
+    "ABMIL": 0.003
+  },
+  "optimization": "one exact full-source objective update per epoch; two-pass VJP replay preserves author dropout and DGR source-only centre buffers, full within-centre rank .1; SGD momentum .9 for DGR, AdamW otherwise",
+  "readout_adapter": "positive-minus-negative class logits plus detached patient Anchor; no new patient outcome feature",
+  "Track_A": "same FR1 source-only 8D features and full anchor; original hidden512 blocks retained, not capacity-matched",
+  "Track_B": "same original frozen independent-frame JEV contrasts, per-source-coordinate std scaling with no target fitting; author learned input projections retained",
+  "dropout": "author defaults retained",
+  "RRT": "region_num4 for bag120; original region/cross-region/EPEG retained; computational sequence partition, no WSI physical-coordinate claim",
+  "ACMIL": "MBA5, STKIMtop10 drop.6, branch label auxiliary and attention cosine diversity retained",
+  "DGR": "lesion vectors5, mutable positive/negative source centres, diversity+triplet .1 each after epoch10; logdet Gram computed double for numerical stability",
+  "WiKG": "feature-derived directed top-k graph, topk min(6, available), original GlobalAttention pool",
+  "FlowMIL": "code_unconfirmed_not_executed",
+  "extra_verified_candidates_max": 3,
+  "raw_input_dim": 5120,
+  "full_data_batch": false,
+  "no_source_validation_labels_passed_to_author_forward": true,
+  "caller_required_fields": [
+    "centers",
+    "deadline_unix"
+  ]
+}

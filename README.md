@@ -1,18 +1,26 @@
 # IF_Redesign: PALE-JEV and evidence-fusion research code
 
-The current empirical method is **PALE-JEV**: frozen released JEV frame
-contrasts, source-only PCA coordinates, a shared residual frame MLP,
-signed Laplace frame responses, masked within-site means, site attention,
-and a patient logit update over a frozen multimodal anchor. The code path is
-`RIMEHead(pooling="mlp", readout="laplace")`.
+The latest source release includes the frozen-JEV patient anchor, the original
+**Stage196 PCA26** implementation, full **P3 PALE** and **P4 no-frame-MLP + Laplace**
+heads, matched ablation training and recent MIL baseline adapters. See the
+[latest method/code map](docs/LATEST_METHOD_CODE.md) to inspect each component.
 
-The latest code adds a common source-centering/gray-reanchoring projection
-repair and six matched patient-loss controls. **ARDR remains an optional
-experimental loss, not the default main method.** See the
-[portable PALE loss API](docs/PALE_ARDR.md) and
-[source-only execution adapters](research/pale_ardr_protocol_20261014/README.md).
-These modules change training objectives without adding another backbone or
-forward architecture. They establish no independent clinical-validation claim.
+The fixed matched experiment retains P3 as its primary arm. P4 is a simpler
+candidate, not an independently confirmed winner. Earlier RIME/CV1 and optional
+ARDR code remain separate; their names and guarantees must not be combined into
+a single claimed method. ARDR is not enabled as the default main method.
+
+Run the data-free P4 example after installation:
+
+```bash
+python scripts/demo_p4.py
+```
+
+The [portable loss API](docs/PALE_ARDR.md) and
+[source-only matched execution adapters](research/pale_matched_validation_20261014/README.md)
+make the forward path, preprocessing and training controls reviewable. Clinical
+adapters require separately supplied private data, weights and immutable locks.
+No manuscript, patient data, clinical result files or checkpoints are included.
 
 ## Earlier RIME candidate
 
